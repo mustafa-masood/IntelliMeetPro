@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface NavItem {
@@ -90,6 +90,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   userAvatar
 }) => {
   const location = useLocation();
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLDivElement>(null);
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', path: '/', iconType: 'dashboard' },
@@ -115,6 +118,40 @@ const Sidebar: React.FC<SidebarProps> = ({
         return null;
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        profileButtonRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node) &&
+        !profileButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isProfileDropdownOpen) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isProfileDropdownOpen]);
 
   return (
     <div className="w-[270px] bg-neutral-900 flex flex-col h-screen fixed left-0 top-0 z-[1000]">
@@ -210,8 +247,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <div className="p-5 px-4 bg-neutral-900">
-        <div className="border border-neutral-700 rounded-12 p-3 flex items-center justify-between bg-gradient-to-b from-transparent to-white/5 bg-gradient-to-r from-white/4 to-white/4 shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.08)] cursor-pointer transition-opacity hover:opacity-90">
+      <div className="p-5 px-4 bg-neutral-900 relative">
+        <div
+          ref={profileButtonRef}
+          onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+          className="border border-neutral-700 rounded-12 p-3 flex items-center justify-between bg-gradient-to-b from-transparent to-white/5 bg-gradient-to-r from-white/4 to-white/4 shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.08)] cursor-pointer transition-opacity hover:opacity-90"
+        >
           <div className="flex items-center gap-3 flex-1">
             {userAvatar ? (
               <img src={userAvatar} alt={userName} className="w-9 h-9 rounded-full object-cover" />
@@ -227,6 +268,72 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div className="text-neutral-300 text-base">↑</div>
         </div>
+
+        {/* Profile Dropdown */}
+        {isProfileDropdownOpen && (
+          <div
+            ref={profileDropdownRef}
+            className="absolute bottom-[88px] left-4 right-4 bg-white border border-stroke-primary rounded-12 shadow-lg z-1001 overflow-hidden"
+          >
+            <div className="flex flex-col">
+              <Link
+                to="/account-settings"
+                onClick={() => setIsProfileDropdownOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary no-underline text-inherit"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="2.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 2.5V5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 15V17.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4.22656 4.22656L6.06656 6.06656" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13.9333 13.9333L15.7733 15.7733" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2.5 10H5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M15 10H17.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4.22656 15.7733L6.06656 13.9333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13.9333 6.06656L15.7733 4.22656" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Account Settings</span>
+              </Link>
+              <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2.5L12.5 8.5L19 9.5L14 14L15 20.5L10 17L5 20.5L6 14L1 9.5L7.5 8.5L10 2.5Z" fill="#2b3d39" />
+                </svg>
+                <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Plan & Billings</span>
+              </button>
+              {/* <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="2.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 2.5V5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 15V17.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4.22656 4.22656L6.06656 6.06656" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13.9333 13.9333L15.7733 15.7733" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M2.5 10H5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M15 10H17.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4.22656 15.7733L6.06656 13.9333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13.9333 6.06656L15.7733 4.22656" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Workspace Settings</span>
+              </button>
+              <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect x="2.5" y="2.5" width="15" height="15" rx="2" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 6.66667C10.4602 6.66667 10.8333 7.03976 10.8333 7.5C10.8333 7.96024 10.4602 8.33333 10 8.33333C9.53976 8.33333 9.16667 7.96024 9.16667 7.5C9.16667 7.03976 9.53976 6.66667 10 6.66667Z" fill="#2b3d39" />
+                  <path d="M10 11.6667V10" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 13.3333H10.0083" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Help</span>
+              </button> */}
+              <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13.3333 14.1667L17.5 10L13.3333 5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M17.5 10H7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Log out</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
