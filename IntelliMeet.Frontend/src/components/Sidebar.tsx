@@ -328,7 +328,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Help</span>
               </button> */}
               <Link
-                to="/logout"
+                to="/signin"
                 onClick={() => setIsProfileDropdownOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer no-underline text-inherit"
               >
