@@ -9,6 +9,7 @@ import IntegrationDetails from './components/IntegrationDetails';
 import MyWorkspace from './components/MyWorkspace';
 import AccountSettings from './components/AccountSettings';
 import PlanBilling from './components/PlanBilling';
+import Logout from './components/Logout';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/my-workspace" element={<MyWorkspace />} />
         <Route path="/account-settings" element={<AccountSettings />} />
         <Route path="/plan-billing" element={<PlanBilling />} />
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>
   );
