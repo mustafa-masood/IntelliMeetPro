@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-4 py-1 px-4 pb-5 overflow-y-auto">
+      <div className="flex-1 flex flex-col gap-4 py-1 px-4 pb-5 overflow-y-auto scrollbar-hide">
         <div className="h-px bg-neutral-400 opacity-20 w-full" />
 
         <div className="flex flex-col gap-1">
