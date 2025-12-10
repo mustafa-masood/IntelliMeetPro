@@ -1,0 +1,139 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\services\\ollamatextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:services\\ollamatextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\options\\ollamaoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:options\\ollamaoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\services\\itextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:services\\itextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "OllamaTextAnalysisService.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\OllamaTextAnalysisService.cs",
+              "RelativeDocumentMoniker": "Services\\OllamaTextAnalysisService.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\OllamaTextAnalysisService.cs",
+              "RelativeToolTip": "Services\\OllamaTextAnalysisService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T11:28:33.645Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "OllamaOptions.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Options\\OllamaOptions.cs",
+              "RelativeDocumentMoniker": "Options\\OllamaOptions.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Options\\OllamaOptions.cs",
+              "RelativeToolTip": "Options\\OllamaOptions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T11:27:19.12Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IntelliMeet.Backend.http",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\IntelliMeet.Backend.http",
+              "RelativeDocumentMoniker": "IntelliMeet.Backend.http",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\IntelliMeet.Backend.http",
+              "RelativeToolTip": "IntelliMeet.Backend.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-12-10T10:15:05.751Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-10T08:33:33.347Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MeetingsController.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\MeetingsController.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
+              "RelativeToolTip": "Controllers\\MeetingsController.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAYwBYAAABPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T08:17:18.753Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ITextAnalysisService.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
+              "RelativeDocumentMoniker": "Services\\ITextAnalysisService.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
+              "RelativeToolTip": "Services\\ITextAnalysisService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAYAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T07:51:04.819Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T03:48:42.999Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
