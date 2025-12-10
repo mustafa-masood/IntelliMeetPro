@@ -5,6 +5,7 @@ import Todos from './components/Todos';
 import AskAI from './components/AskAI';
 import AppIntegrations from './components/AppIntegrations';
 import IntegrationDetails from './components/IntegrationDetails';
+import MyWorkspace from './components/MyWorkspace';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/ask-ai" element={<AskAI />} />
         <Route path="/app-integrations" element={<AppIntegrations />} />
         <Route path="/app-integrations/:integrationId" element={<IntegrationDetails />} />
+        <Route path="/my-workspace" element={<MyWorkspace />} />
       </Routes>
     </Router>
   );
