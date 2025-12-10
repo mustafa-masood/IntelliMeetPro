@@ -294,12 +294,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </svg>
                 <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Account Settings</span>
               </Link>
-              <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary">
+              <Link
+                to="/plan-billing"
+                onClick={() => setIsProfileDropdownOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary no-underline text-inherit"
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M10 2.5L12.5 8.5L19 9.5L14 14L15 20.5L10 17L5 20.5L6 14L1 9.5L7.5 8.5L10 2.5Z" fill="#2b3d39" />
                 </svg>
                 <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Plan & Billings</span>
-              </button>
+              </Link>
               {/* <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <circle cx="10" cy="10" r="2.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

@@ -8,6 +8,7 @@ import AppIntegrations from './components/AppIntegrations';
 import IntegrationDetails from './components/IntegrationDetails';
 import MyWorkspace from './components/MyWorkspace';
 import AccountSettings from './components/AccountSettings';
+import PlanBilling from './components/PlanBilling';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/app-integrations/:integrationId" element={<IntegrationDetails />} />
         <Route path="/my-workspace" element={<MyWorkspace />} />
         <Route path="/account-settings" element={<AccountSettings />} />
+        <Route path="/plan-billing" element={<PlanBilling />} />
       </Routes>
     </Router>
   );
