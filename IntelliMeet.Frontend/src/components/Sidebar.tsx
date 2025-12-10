@@ -327,14 +327,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </svg>
                 <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Help</span>
               </button> */}
-              <button className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer">
+              <Link
+                to="/logout"
+                onClick={() => setIsProfileDropdownOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer no-underline text-inherit"
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M7.5 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M13.3333 14.1667L17.5 10L13.3333 5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M17.5 10H7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">Log out</span>
-              </button>
+              </Link>
             </div>
           </div>
         )}
