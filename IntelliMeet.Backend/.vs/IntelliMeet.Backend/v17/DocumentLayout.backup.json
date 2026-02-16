@@ -7,6 +7,22 @@
       "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\models\\analyzerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:models\\analyzerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\models\\transcriptsegment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:models\\transcriptsegment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\models\\meetinganalysisresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:models\\meetinganalysisresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\models\\transcriptresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:models\\transcriptresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\services\\ollamatextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:services\\ollamatextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -15,20 +31,24 @@
       "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:options\\ollamaoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
-      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\services\\itextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:services\\itextanalysisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:controllers\\meetingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\services\\whisperxtranscriptionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:services\\whisperxtranscriptionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:intellimeet.backend.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|c:\\users\\fsidd\\projects\\intellimeet\\intellimeet.backend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{C58ED8C1-2FBD-4BC5-B756-3BCD6E128B07}|IntelliMeet.Backend.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,24 +58,71 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "AnalyzeRequest.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\AnalyzeRequest.cs",
+              "RelativeDocumentMoniker": "Models\\AnalyzeRequest.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\AnalyzeRequest.cs",
+              "RelativeToolTip": "Models\\AnalyzeRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T00:56:59.777Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MeetingAnalysisResponse.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\MeetingAnalysisResponse.cs",
+              "RelativeDocumentMoniker": "Models\\MeetingAnalysisResponse.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\MeetingAnalysisResponse.cs",
+              "RelativeToolTip": "Models\\MeetingAnalysisResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T00:56:48.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "TranscriptResult.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\TranscriptResult.cs",
+              "RelativeDocumentMoniker": "Models\\TranscriptResult.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\TranscriptResult.cs",
+              "RelativeToolTip": "Models\\TranscriptResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T00:56:44.368Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "WhisperXTranscriptionService.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\WhisperXTranscriptionService.cs",
+              "RelativeDocumentMoniker": "Services\\WhisperXTranscriptionService.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\WhisperXTranscriptionService.cs",
+              "RelativeToolTip": "Services\\WhisperXTranscriptionService.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T00:52:48.061Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "OllamaTextAnalysisService.cs",
               "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\OllamaTextAnalysisService.cs",
               "RelativeDocumentMoniker": "Services\\OllamaTextAnalysisService.cs",
               "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\OllamaTextAnalysisService.cs",
               "RelativeToolTip": "Services\\OllamaTextAnalysisService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEcAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADYAAAAAAAAAAAAYwEcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-10T11:28:33.645Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-10T11:28:33.645Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 6,
               "Title": "OllamaOptions.cs",
               "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Options\\OllamaOptions.cs",
               "RelativeDocumentMoniker": "Options\\OllamaOptions.cs",
@@ -63,12 +130,11 @@
               "RelativeToolTip": "Options\\OllamaOptions.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-10T11:27:19.12Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-10T11:27:19.12Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 10,
               "Title": "IntelliMeet.Backend.http",
               "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\IntelliMeet.Backend.http",
               "RelativeDocumentMoniker": "IntelliMeet.Backend.http",
@@ -76,47 +142,7 @@
               "RelativeToolTip": "IntelliMeet.Backend.http",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2025-12-10T10:15:05.751Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
-              "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
-              "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-10T08:33:33.347Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "MeetingsController.cs",
-              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
-              "RelativeDocumentMoniker": "Controllers\\MeetingsController.cs",
-              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
-              "RelativeToolTip": "Controllers\\MeetingsController.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAYwBYAAABPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-10T08:17:18.753Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ITextAnalysisService.cs",
-              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
-              "RelativeDocumentMoniker": "Services\\ITextAnalysisService.cs",
-              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
-              "RelativeToolTip": "Services\\ITextAnalysisService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAYAAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-10T07:51:04.819Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-10T10:15:05.751Z"
             },
             {
               "$type": "Document",
@@ -126,10 +152,58 @@
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAHAAAAAAAAAA==",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABYAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-10T03:48:42.999Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TranscriptSegment.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\TranscriptSegment.cs",
+              "RelativeDocumentMoniker": "Models\\TranscriptSegment.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Models\\TranscriptSegment.cs",
+              "RelativeToolTip": "Models\\TranscriptSegment.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-11T00:56:54.274Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-10T08:33:33.347Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MeetingsController.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\MeetingsController.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Controllers\\MeetingsController.cs",
+              "RelativeToolTip": "Controllers\\MeetingsController.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAUwCEAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T08:17:18.753Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ITextAnalysisService.cs",
+              "DocumentMoniker": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
+              "RelativeDocumentMoniker": "Services\\ITextAnalysisService.cs",
+              "ToolTip": "C:\\Users\\Fsidd\\Projects\\IntelliMeet\\IntelliMeet.Backend\\Services\\ITextAnalysisService.cs",
+              "RelativeToolTip": "Services\\ITextAnalysisService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T07:51:04.819Z"
             }
           ]
         }

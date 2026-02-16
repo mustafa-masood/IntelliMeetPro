@@ -21,8 +21,8 @@ namespace IntelliMeet.Backend.Controllers
 
         [HttpPost("analyzeWithTranscription")]
         public async Task<ActionResult<MeetingAnalysisResponse>> AnalyzeWithTranscription(
-            [FromForm] AnalyzeRequest request,
-            CancellationToken ct)
+    [FromForm] AnalyzeRequest request,
+    CancellationToken ct)
         {
             if (request.File == null || request.File.Length == 0)
                 return BadRequest("File is required.");
@@ -41,6 +41,7 @@ namespace IntelliMeet.Backend.Controllers
 
             return Ok(response);
         }
+
 
         // Optional: keep a pure mock endpoint for quick testing
         [HttpPost("analyze")]

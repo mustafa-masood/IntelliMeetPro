@@ -22,7 +22,11 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<OllamaOptions>(
     builder.Configuration.GetSection("Ollama"));
 builder.Services.AddHttpClient<ITextAnalysisService, OllamaTextAnalysisService>();
-builder.Services.AddHttpClient<ITranscriptionService, WhisperXTranscriptionService>();
+builder.Services.AddHttpClient<ITranscriptionService, WhisperXTranscriptionService>(
+    client=>
+    {
+        client.Timeout = TimeSpan.FromMinutes(10);
+    });
 
 
 var app = builder.Build();
