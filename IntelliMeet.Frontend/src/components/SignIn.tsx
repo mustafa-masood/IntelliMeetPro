@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const SignIn: React.FC = () => {
     const navigate = useNavigate();
@@ -141,12 +141,12 @@ const SignIn: React.FC = () => {
                                     Remember me
                                 </label>
                             </div>
-                            <button
-                                type="button"
-                                className="font-inter font-medium text-base text-primary-500 tracking-[-0.176px] hover:underline"
+                            <Link
+                                to="/forgot-password"
+                                className="font-inter font-medium text-base text-primary-500 tracking-[-0.176px] hover:underline no-underline"
                             >
                                 Forgot Password?
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Sign In Button */}
@@ -160,7 +160,7 @@ const SignIn: React.FC = () => {
 
                     {/* Sign Up Link */}
                     <p className="font-inter-tight font-medium text-2xl text-text-secondary text-center m-0">
-                        Don't have an account? <span className="text-primary-500 cursor-pointer hover:underline">Sign Up</span>
+                        Don't have an account? <Link to="/signup" className="text-primary-500 cursor-pointer hover:underline no-underline">Sign Up</Link>
                     </p>
                 </div>
             </div>
