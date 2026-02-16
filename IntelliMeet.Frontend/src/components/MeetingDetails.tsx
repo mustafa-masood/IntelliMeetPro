@@ -2,23 +2,22 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
 import TeamCreationSidebar from './TeamCreationSidebar';
+import type { MeetingDetailsProps } from '../types';
 
-interface MeetingDetailsProps {
-    meeting: {
-        id: string;
-        name: string;
-        initials: string;
-        avatarColor: string;
-        duration: string;
-        creator: string;
-        status: 'coming-soon' | 'completed';
-        date: string;
-    };
-    onBack: () => void;
-}
-
-const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting, onBack }) => {
+const MeetingDetails: React.FC<MeetingDetailsProps> = ({
+    summary = '',
+    keyPoints = [],
+    actionItems = [],
+    keyTakeaways = [],
+    transcript,
+    meetingTitle = 'Meeting Details',
+    meetingDate,
+    onBack,
+}) => {
     const [activeTab, setActiveTab] = useState<'summary' | 'transcription'>('summary');
+    
+    // Ensure transcript has required structure
+    const safeTranscript = transcript || { fullText: '', segments: [] };
 
     return (
         <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
@@ -41,7 +40,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting, onBack }) => {
                         </svg>
                     </button>
                     <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">
-                        All Meetings / {meeting.name}
+                        All Meetings / {meetingTitle}
                     </span>
                 </div>
 
@@ -80,16 +79,18 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting, onBack }) => {
                                 {/* Header */}
                                 <div className="p-5 border-b border-stroke-primary">
                                     <h1 className="font-inter font-medium text-2xl leading-8 text-text-primary tracking-[-0.36px] mb-2">
-                                        {meeting.name}
+                                        {meetingTitle}
                                     </h1>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm" style={{ backgroundColor: meeting.avatarColor }}>
-                                            {meeting.initials}
+                                    {meetingDate && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm bg-primary-500">
+                                                {meetingTitle.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <span className="font-inter font-normal text-base text-text-secondary tracking-[-0.176px]">
+                                                IntelliMeet {meetingDate} English (Global)
+                                            </span>
                                         </div>
-                                        <span className="font-inter font-normal text-base text-text-secondary tracking-[-0.176px]">
-                                            Fred IntelliMeet Aug 08 2024, 4:22 PM English (Global)
-                                        </span>
-                                    </div>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -136,37 +137,54 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting, onBack }) => {
                                             Overview
                                         </h2>
                                         <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                            The "IntelliMeet AI Platform Quick Overview" presentation provided an engaging summary of the platform's core features and capabilities, focusing on enhancing meeting efficiency and collaboration. The meeting began with a welcome segment that showcased a dashboard displaying past meeting digests, upcoming attendance options, and language settings for transcription. Notably, the platform's tasks feature automatically generates action items, while the contacts section offers a lightweight CRM for participants. Comprehensive meeting notes with timestamps, speaker identification, and smart search filters were highlighted, along with collaboration tools such as "Ask Fred," soundbite creation, and bookmarking.
+                                            {summary}
                                         </p>
                                     </div>
 
-                                    <div>
-                                        <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                            Outline
-                                        </h2>
-                                        <ul className="list-disc list-inside space-y-1">
-                                            <li className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                Outline of IntelliMeet AI Platform Overview
-                                            </li>
-                                            <li className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                Key Features of the IntelliMeet AI Platform
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    {keyPoints.length > 0 && (
+                                        <div>
+                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
+                                                Key Points
+                                            </h2>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {keyPoints.map((point, index) => (
+                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                        {point}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
 
-                                    <div>
-                                        <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                            Action Items
-                                        </h2>
-                                        <ol className="list-decimal list-inside space-y-1">
-                                            <li className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                Laiba will gather and refine findings on meeting apps
-                                            </li>
-                                            <li className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                Mustafa will finalize the requirements and present at the next meeting
-                                            </li>
-                                        </ol>
-                                    </div>
+                                    {keyTakeaways.length > 0 && (
+                                        <div>
+                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
+                                                Key Takeaways
+                                            </h2>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {keyTakeaways.map((takeaway, index) => (
+                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                        {takeaway}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {actionItems.length > 0 && (
+                                        <div>
+                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
+                                                Action Items
+                                            </h2>
+                                            <ol className="list-decimal list-inside space-y-1">
+                                                {actionItems.map((item, index) => (
+                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                        {item.description} {item.owner && `(Owner: ${item.owner})`} {item.dueDate && `(Due: ${item.dueDate})`}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4 w-full">
@@ -193,115 +211,64 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({ meeting, onBack }) => {
 
                                     {/* Transcript List */}
                                     <div className="flex flex-col gap-4">
-                                        {/* Transcript Item 1 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white font-inter font-medium text-xs">
-                                                    OT
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">Olivia Taylor</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">00:00</span>
-                                                </div>
-                                            </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                Welcome to IntelliMeet. Now that you've signed up, we're going to show you some of the core features that you can start using.
-                                            </p>
-                                        </div>
+                                        {safeTranscript?.segments && safeTranscript.segments.length > 0 ? (
+                                            safeTranscript.segments.map((segment, index) => {
+                                            const formatTime = (seconds: number): string => {
+                                                const mins = Math.floor(seconds / 60);
+                                                const secs = Math.floor(seconds % 60);
+                                                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                                            };
 
-                                        {/* Transcript Item 2 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center">
-                                                    <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center text-xs font-inter font-medium text-text-primary">
-                                                        DL
+                                            const getInitials = (speaker: string): string => {
+                                                return speaker
+                                                    .split(' ')
+                                                    .map((n) => n[0])
+                                                    .join('')
+                                                    .toUpperCase()
+                                                    .substring(0, 2);
+                                            };
+
+                                            const getAvatarColor = (speaker: string): string => {
+                                                const colors = ['#3c91e6', '#fdeee7', '#16a34a', '#ea580c', '#8B5CF6'];
+                                                const hash = speaker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                                                return colors[hash % colors.length];
+                                            };
+
+                                            const avatarColor = getAvatarColor(segment.speaker);
+                                            const isPrimary = avatarColor === '#3c91e6' || avatarColor === '#16a34a';
+
+                                            return (
+                                                <div key={index} className="flex flex-col gap-3">
+                                                    <div className="flex gap-2 items-center">
+                                                        <div
+                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-inter font-medium ${
+                                                                isPrimary ? 'bg-primary-500 text-white' : 'bg-[#fdeee7] text-text-primary'
+                                                            }`}
+                                                            style={!isPrimary ? { backgroundColor: avatarColor } : undefined}
+                                                        >
+                                                            {getInitials(segment.speaker)}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">
+                                                                {segment.speaker}
+                                                            </span>
+                                                            <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
+                                                            <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">
+                                                                {formatTime(segment.start)}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                    <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
+                                                        {segment.text}
+                                                    </p>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">David Lee</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">02:32</span>
-                                                </div>
+                                            );
+                                        })
+                                        ) : (
+                                            <div className="text-text-secondary font-inter text-sm">
+                                                No transcript segments available.
                                             </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                I can scroll to view my upcoming meetings and choose whether to have Fireflies join by toggling it on or off.
-                                            </p>
-                                        </div>
-
-                                        {/* Transcript Item 3 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center">
-                                                    <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center text-xs font-inter font-medium text-text-primary">
-                                                        OT
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">Olivia Taylor</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">03:39</span>
-                                                </div>
-                                            </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                I can also scroll down and look at my upcoming meetings and toggle on if I want fireflies to join it, or toggle off if I don't want it to join it.
-                                            </p>
-                                        </div>
-
-                                        {/* Transcript Item 4 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center">
-                                                    <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center text-xs font-inter font-medium text-text-primary">
-                                                        DL
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">David Lee</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">04:20</span>
-                                                </div>
-                                            </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                Usually if you have fireflies connected we recommend you just having the auto join settings so that it'll just join your meetings.
-                                            </p>
-                                        </div>
-
-                                        {/* Transcript Item 5 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white font-inter font-medium text-xs">
-                                                    OT
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">Olivia Taylor</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">05:30</span>
-                                                </div>
-                                            </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                I can also scroll down and look at my upcoming meetings and toggle on if I want fireflies to join it, or toggle off if I don't want it to join it.
-                                            </p>
-                                        </div>
-
-                                        {/* Transcript Item 6 */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-2 items-center">
-                                                <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center">
-                                                    <div className="w-6 h-6 rounded-full bg-[#fdeee7] flex items-center justify-center text-xs font-inter font-medium text-text-primary">
-                                                        DL
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">David Lee</span>
-                                                    <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                    <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">08:45</span>
-                                                </div>
-                                            </div>
-                                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                I can also scroll down and look at my upcoming meetings and toggle on if I want fireflies to join it, or toggle off if I don't want it to join it.
-                                            </p>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

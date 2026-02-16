@@ -1,28 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import RecentMeetingsTable from './RecentMeetingsTable';
 import RightSidebar from './RightSidebar';
-import SearchBar from './SearchBar';
+import MobileMenuButton from './MobileMenuButton';
+import Container from './layout/Container';
 
 const Dashboard: React.FC = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
-      <Sidebar />
+    <div className="flex h-screen bg-bg-surface-lv1 overflow-hidden">
+      <MobileMenuButton 
+        isOpen={isMobileMenuOpen} 
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      
+      <Sidebar 
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
+      />
 
-      <div className="ml-[270px] flex-1 flex flex-col h-screen overflow-hidden">
-        <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-[100]">
-          <SearchBar />
+      <main className="flex-1 flex flex-col h-screen ml-0 md:ml-[270px] transition-all duration-300 overflow-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <Container className="py-4 sm:py-6 lg:py-8">
+            <div className="flex flex-col xl:flex-row gap-4 lg:gap-6">
+              <div className="flex-1 xl:flex-[2] min-w-0">
+                <RecentMeetingsTable />
+              </div>
+              
+              <aside className="flex-1 xl:flex-[1] shrink-0">
+                <RightSidebar />
+              </aside>
+            </div>
+          </Container>
         </div>
-
-        <div>
-          <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary w-full max-w-[1106px] px-[23px] ">Dashboard</h1>
-        </div>
-
-        <div className="flex gap-2 px-[23px] flex-1 overflow-y-auto max-w-[1440px] w-full mx-auto">
-          <RecentMeetingsTable />
-          <RightSidebar />
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

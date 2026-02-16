@@ -33,3 +33,4 @@ C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\refint\
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.pdb
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.genruntimeconfig.cache
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\ref\IntelliMeet.Backend.dll
+C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.sourcelink.json

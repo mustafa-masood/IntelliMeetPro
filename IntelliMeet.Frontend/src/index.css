@@ -57,3 +57,80 @@
     scrollbar-width: none;  /* Firefox */
   }
 }
+
+@layer utilities {
+  /* Background colors */
+  .bg-bg-surface-pure {
+    background-color: var(--color-bg-surface-pure);
+  }
+  .bg-bg-surface-lv1 {
+    background-color: var(--color-bg-surface-lv1);
+  }
+  .bg-bg-surface-alpha-90 {
+    background-color: var(--color-bg-surface-alpha-90);
+  }
+  .bg-bg-surface-lv2 {
+    background-color: var(--color-bg-surface-lv1);
+  }
+  
+  /* Text colors */
+  .text-text-primary {
+    color: var(--color-text-primary);
+  }
+  .text-text-secondary {
+    color: var(--color-text-secondary);
+  }
+  .text-text-tertiary {
+    color: var(--color-text-tertiary);
+  }
+  .text-text-white {
+    color: var(--color-text-white);
+  }
+  .text-text-disable {
+    color: var(--color-text-disable);
+  }
+  
+  /* Border colors */
+  .border-stroke-primary {
+    border-color: var(--color-stroke-primary);
+  }
+  .border-stroke-secondary {
+    border-color: var(--color-stroke-secondary);
+  }
+  
+  /* Font families */
+  .font-inter {
+    font-family: var(--font-inter);
+  }
+  .font-inter-tight {
+    font-family: var(--font-inter-tight);
+  }
+  
+  /* Border radius */
+  .rounded-4 {
+    border-radius: 4px;
+  }
+  .rounded-8 {
+    border-radius: 8px;
+  }
+  .rounded-10 {
+    border-radius: 10px;
+  }
+  .rounded-12 {
+    border-radius: 12px;
+  }
+  .rounded-16 {
+    border-radius: 16px;
+  }
+  .rounded-20 {
+    border-radius: 20px;
+  }
+  .rounded-full {
+    border-radius: 9999px;
+  }
+  
+  /* Shadows */
+  .shadow-card {
+    box-shadow: 0px 1px 2px 0px rgba(9, 25, 72, 0.13);
+  }
+}
