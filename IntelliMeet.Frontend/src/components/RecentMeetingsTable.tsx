@@ -75,7 +75,7 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings }) =
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <h1 className="font-inter font-medium text-xl text-text-primary tracking-[-0.084px] mb-3">
+      <h1 className="font-inter font-medium text-2xl text-text-primary tracking-[-0.084px] mb-1">
         Dashboard
       </h1>
 
