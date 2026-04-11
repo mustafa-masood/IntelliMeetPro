@@ -14,21 +14,19 @@ const Dashboard: React.FC = () => {
         isOpen={isMobileMenuOpen} 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
       />
-      
       <Sidebar 
         isMobileOpen={isMobileMenuOpen}
         onMobileClose={() => setIsMobileMenuOpen(false)}
       />
-
       <main className="flex-1 flex flex-col h-screen ml-0 md:ml-[270px] transition-all duration-300 overflow-hidden">
+        {/* Single scrollable region, no nested overflow */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <Container className="py-4 sm:py-6 lg:py-8">
-            <div className="flex flex-col xl:flex-row gap-4 lg:gap-6">
-              <div className="flex-1 xl:flex-[2] min-w-0">
+          <Container className="py-4 sm:py-6 lg:py-8 h-full">
+            <div className="flex flex-col xl:flex-row gap-4 lg:gap-6 min-h-full">
+              <div className="flex-1 xl:flex-[2] min-w-0 flex flex-col">
                 <RecentMeetingsTable />
               </div>
-              
-              <aside className="flex-1 xl:flex-[1] shrink-0">
+              <aside className="xl:w-[300px] shrink-0">
                 <RightSidebar />
               </aside>
             </div>
