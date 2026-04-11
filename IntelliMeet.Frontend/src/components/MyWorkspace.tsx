@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import SearchBar from './SearchBar';
 
 const MyWorkspace: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
@@ -30,26 +29,14 @@ const MyWorkspace: React.FC = () => {
             <Sidebar />
 
             <div className="ml-[270px] flex-1 flex flex-col h-screen overflow-hidden relative">
-                {/* Topbar */}
-                <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-100">
-                    <SearchBar />
-                </div>
+
+
 
                 {/* Conditional Rendering: Workspace Management or Creation Flow */}
                 {workspaceCompleted ? (
                     <>
                         {/* Page Header */}
                         <div className="px-8 pt-[10px] flex flex-col gap-4 max-w-[1106px] w-full mx-auto">
-                            <div className="flex gap-3 items-center w-full">
-                                <button className="p-1 hover:bg-bg-surface-lv1 rounded-4 transition-colors bg-transparent border-none cursor-pointer">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M12.5 5L7.5 10L12.5 15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                                <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0">
-                                    Create Workspace
-                                </h1>
-                            </div>
                         </div>
 
                         {/* Tabs */}
@@ -184,14 +171,10 @@ const MyWorkspace: React.FC = () => {
                     <>
                         {/* Page Header */}
                         <div className="px-8 pt-[10px] flex flex-col gap-4 max-w-[1106px] w-full mx-auto">
-                            <div className="flex gap-3 items-center w-full">
-                                <button className="p-1 hover:bg-bg-surface-lv1 rounded-4 transition-colors bg-transparent border-none cursor-pointer">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M12.5 5L7.5 10L12.5 15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                                <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0">
-                                    Create Workspace
+                            <div className="flex gap-3 mt-6 items-center w-full">
+
+                                <h1 className="font-inter font-medium text-2xl text-text-primary tracking-[-0.084px] mb-1">
+                                    Create Your Workspace
                                 </h1>
                             </div>
                         </div>
@@ -217,22 +200,12 @@ const MyWorkspace: React.FC = () => {
                                 {/* Step 1 Content */}
                                 {currentStep === 1 && (
                                     <>
-                                        {/* Content Card */}
-                                        <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 p-3 flex flex-col gap-3">
-                                            <div className="flex flex-col gap-1">
-                                                <h2 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0">
-                                                    Create a workspace
-                                                </h2>
-                                                <p className="font-inter font-normal text-sm leading-5 text-text-secondary tracking-[-0.084px] m-0">
-                                                    Workspaces allow companies to build holistic views of metrics, and allow for custom permissions across teams and individuals.
-                                                </p>
-                                            </div>
-                                        </div>
+                                    
 
                                         {/* Input Field */}
                                         <div className="flex flex-col gap-1">
                                             <label className="font-inter font-medium text-base leading-6 text-text-primary tracking-[-0.176px]">
-                                                Name your new organization
+                                               Give your workspace a name
                                             </label>
                                             <input
                                                 type="text"
@@ -266,8 +239,8 @@ const MyWorkspace: React.FC = () => {
                                                 onClick={() => setCurrentStep(2)}
                                                 disabled={!workspaceName || !agreedToTerms}
                                                 className={`rounded-8 px-[10px] py-2 flex items-center justify-center font-inter font-medium text-sm tracking-[-0.084px] ${workspaceName && agreedToTerms
-                                                        ? 'bg-primary-500 text-white cursor-pointer hover:bg-primary-00'
-                                                        : 'bg-primary-500 text-white opacity-50 cursor-not-allowed'
+                                                    ? 'bg-primary-500 text-white cursor-pointer hover:bg-primary-00'
+                                                    : 'bg-primary-500 text-white opacity-50 cursor-not-allowed'
                                                     }`}
                                             >
                                                 Next step
