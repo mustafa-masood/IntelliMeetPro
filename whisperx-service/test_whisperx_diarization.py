@@ -14,7 +14,7 @@ import whisperx
 from whisperx.diarize import DiarizationPipeline
 import gc
 
-device = "cpu"
+device = "cuda"
 audio_file = "sample.mp3"
 batch_size = 16
 compute_type = "int8"

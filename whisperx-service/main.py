@@ -29,11 +29,11 @@ class TranscriptionResponse(BaseModel):
 
 app = FastAPI()
 
-device = "cpu"           # keep it stable for now
+device = "cuda"           # keep it stable for now
 compute_type = "int8"    # suitable for CPU
 batch_size = 16
 
-HF_TOKEN = "YOUR_HF_TOKEN_HERE"  # same token that works in your test script
+HF_TOKEN = "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"  # same token that works in your test script
 
 print(f"Loading WhisperX ASR model on {device} ...")
 asr_model = whisperx.load_model("large-v2", device, compute_type=compute_type)

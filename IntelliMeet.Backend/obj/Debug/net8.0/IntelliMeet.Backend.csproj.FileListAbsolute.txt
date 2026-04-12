@@ -26,7 +26,6 @@ C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\staticw
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliM.0D545A6F.Up2Date
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.dll
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\refint\IntelliMeet.Backend.dll
@@ -34,3 +33,7 @@ C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\Intelli
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.genruntimeconfig.cache
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\ref\IntelliMeet.Backend.dll
 C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\IntelliMeet.Backend.sourcelink.json
+C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\bin\Debug\net8.0\Polly.dll
+C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\bin\Debug\net8.0\Svix.dll
+C:\Users\Fsidd\Projects\IntelliMeet\IntelliMeet.Backend\obj\Debug\net8.0\swae.build.ex.cache

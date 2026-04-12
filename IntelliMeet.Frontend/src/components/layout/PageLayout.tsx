@@ -15,7 +15,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   className = '' 
 }) => {
   return (
-    <div className="flex min-h-screen bg-bg-surface-lv1">
+    <div className={`flex min-h-screen bg-bg-surface-lv1 ${className}`.trim()}>
       <Sidebar />
       
       <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">

@@ -14,7 +14,7 @@ interface Meeting {
 interface MeetingsTableProps {
     meetings: Meeting[];
     analyzedMeetings?: Array<{ id: string; title: string; date: string }>;
-    onMeetingClick: (meeting: Meeting) => void;
+    onMeetingClick: (meeting: Meeting) => void | Promise<void>;
     onAnalyzedMeetingClick: (meeting: { id: string; title: string; date: string }) => void;
     formatDateShort: (date: string) => string;
     showAllMeetings: boolean;
@@ -112,13 +112,13 @@ const MeetingsTable: React.FC<MeetingsTableProps> = ({
 
             <button
               onClick={() =>
-                meeting.isAnalyzed
+                void (meeting.isAnalyzed
                   ? onAnalyzedMeetingClick({
                       id: meeting.id,
                       title: meeting.name,
                       date: meeting.date,
                     })
-                  : onMeetingClick(meeting)
+                  : onMeetingClick(meeting))
               }
               className="font-inter font-medium text-sm text-text-primary cursor-pointer hover:underline text-left truncate block w-full"
             >
@@ -193,9 +193,10 @@ const MeetingsTable: React.FC<MeetingsTableProps> = ({
                         </div>
                         <div className="flex-1 min-w-0">
                             <button
-                                onClick={() => meeting.isAnalyzed
-                                    ? onAnalyzedMeetingClick({ id: meeting.id, title: meeting.name, date: meeting.date })
-                                    : onMeetingClick(meeting)
+                                onClick={() =>
+                                    void (meeting.isAnalyzed
+                                        ? onAnalyzedMeetingClick({ id: meeting.id, title: meeting.name, date: meeting.date })
+                                        : onMeetingClick(meeting))
                                 }
                                 className="font-inter font-medium text-sm text-text-primary mb-2 block text-left hover:underline w-full"
                             >

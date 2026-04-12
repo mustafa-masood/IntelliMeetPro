@@ -1,6 +1,25 @@
 @IntelliMeet.Backend_HostAddress = http://localhost:5172
 
-GET {{IntelliMeet.Backend_HostAddress}}/weatherforecast/
+### List meetings (seeded demo)
+GET {{IntelliMeet.Backend_HostAddress}}/api/meetings
+Accept: application/json
+
+###
+
+### Meeting detail (replace with seeded id from GET list)
+GET {{IntelliMeet.Backend_HostAddress}}/api/meetings/22222222-2222-2222-2222-222222222222
+Accept: application/json
+
+###
+
+### Dashboard upcoming
+GET {{IntelliMeet.Backend_HostAddress}}/api/dashboard/upcoming-meetings
+Accept: application/json
+
+###
+
+### Todos
+GET {{IntelliMeet.Backend_HostAddress}}/api/todos
 Accept: application/json
 
 ###

@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import MeetingDetails from './MeetingDetails';
 import MobileMenuButton from './MobileMenuButton';
 import MeetingsTable from './MeetingsTable';
 import Container from './layout/Container';
 import SearchBar from './SearchBar';
-import type { MeetingAnalysisResponse, Meeting as MeetingType } from '../types';
+import type { MeetingAnalysisResponse, Meeting as MeetingType, ApiActionItemRow } from '../types';
+import { imApi } from '../api/intellimeet';
 
 interface Meeting {
     id: string;
@@ -16,6 +17,23 @@ interface Meeting {
     creator: string;
     status: 'coming-soon' | 'completed';
     date: string;
+}
+
+const EMPTY_MEETING_ID = '00000000-0000-0000-0000-000000000000';
+
+function formatApiMeetingDate(iso?: string | null): string {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleString(undefined, {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch {
+        return String(iso);
+    }
 }
 
 const Meetings: React.FC = () => {
@@ -32,6 +50,16 @@ const Meetings: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [analyzedMeetings, setAnalyzedMeetings] = useState<Array<MeetingType & { analysisResult?: MeetingAnalysisResponse }>>([]);
     const [selectedAnalysisResult, setSelectedAnalysisResult] = useState<MeetingAnalysisResponse | null>(null);
+    const [apiMeetings, setApiMeetings] = useState<Meeting[]>([]);
+    const [apiMeetingId, setApiMeetingId] = useState<string | null>(null);
+    const [apiActionItems, setApiActionItems] = useState<ApiActionItemRow[]>([]);
+    const [audioPlaybackUrl, setAudioPlaybackUrl] = useState<string | null>(null);
+    const [detailSource, setDetailSource] = useState<'upload' | 'api'>('upload');
+    const [liveLink, setLiveLink] = useState('');
+    const [liveName, setLiveName] = useState('');
+    const [liveJoinBusy, setLiveJoinBusy] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [meetingsListHint, setMeetingsListHint] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -59,22 +87,52 @@ const Meetings: React.FC = () => {
         { id: '5', name: 'VID_20240209_96421564', extension: 'mp4', size: '77.7mb', time: '3 days ago', status: 'progressing', badgeColor: 'primary' },
     ];
 
-    // Mock meetings data
-    const meetings: Meeting[] = [
-        { id: '1', name: 'Design Explanations', initials: 'DE', avatarColor: '#3B82F6', duration: '90 min', creator: 'Thomas L. Fletcher', status: 'coming-soon', date: '02 Jan 2025, 08:43 AM' },
-        { id: '2', name: 'Project Discussions', initials: 'PD', avatarColor: '#8B5CF6', duration: '60 min', creator: 'Andre Tie', status: 'coming-soon', date: '03 Jan 2025, 10:15 AM' },
-        { id: '3', name: 'Vision & Goals Workshop', initials: 'PO', avatarColor: '#EC4899', duration: '30 min', creator: 'Cristian Robarts', status: 'coming-soon', date: '04 Jan 2025, 02:00 PM' },
-        { id: '4', name: 'Weekly Alignment Huddle', initials: 'EF', avatarColor: '#10B981', duration: '120 min', creator: 'Allies Holland', status: 'coming-soon', date: '05 Jan 2025, 09:30 AM' },
-        { id: '5', name: 'Innovation Roundtable', initials: 'IR', avatarColor: '#F59E0B', duration: '75 min', creator: 'Jhon Smith', status: 'coming-soon', date: '06 Jan 2025, 11:00 AM' },
-        { id: '6', name: 'Operational Excellence Review', initials: 'OE', avatarColor: '#EF4444', duration: '90 min', creator: 'Thomas L. Fletcher', status: 'completed', date: '22 Dec 2024, 02:33 PM' },
-        { id: '7', name: 'Customer Success Insights', initials: 'CS', avatarColor: '#06B6D4', duration: '45 min', creator: 'Andre Tie', status: 'completed', date: '21 Dec 2024, 03:15 PM' },
-        { id: '8', name: 'Weekly Alignment Huddle', initials: 'EF', avatarColor: '#10B981', duration: '90 min', creator: 'Allies Holland', status: 'coming-soon', date: '05 Jan 2025, 09:30 AM' },
-        { id: '9', name: 'Innovation Roundtable', initials: 'IR', avatarColor: '#F59E0B', duration: '130 min', creator: 'Jhon Smith', status: 'coming-soon', date: '06 Jan 2025, 11:00 AM' },
-        { id: '10', name: 'Operational Excellence Review', initials: 'OE', avatarColor: '#EF4444', duration: '120 min', creator: 'Thomas L. Fletcher', status: 'completed', date: '22 Dec 2024, 02:33 PM' },
-        { id: '11', name: 'Customer Success Insights', initials: 'CS', avatarColor: '#06B6D4', duration: '45 min', creator: 'Andre Tie', status: 'completed', date: '21 Dec 2024, 03:15 PM' },
+    const refreshTableMeetings = useCallback(async () => {
+        try {
+            const [rows, upcoming] = await Promise.all([imApi.listMeetings(), imApi.upcomingMeetings()]);
+            const apiRows: Meeting[] = rows.map((m) => ({
+                id: m.id,
+                name: m.title,
+                initials: m.title.substring(0, 2).toUpperCase(),
+                avatarColor: '#0d9488',
+                duration: '—',
+                creator: 'Meeting BaaS',
+                status: m.status === 3 ? ('completed' as const) : ('coming-soon' as const),
+                date: formatApiMeetingDate(m.startUtc),
+            }));
+            const seen = new Set(apiRows.map((m) => m.id));
+            const sortedUpcoming = [...upcoming].sort((a, b) => {
+                const ta = a.startUtc ? new Date(a.startUtc).getTime() : 0;
+                const tb = b.startUtc ? new Date(b.startUtc).getTime() : 0;
+                return ta - tb;
+            });
+            const fromCal: Meeting[] = [];
+            for (const u of sortedUpcoming) {
+                if (!u.calendarEventId) continue;
+                const mid =
+                    u.meetingId && u.meetingId !== EMPTY_MEETING_ID ? u.meetingId : `cal-${u.calendarEventId}`;
+                if (seen.has(mid)) continue;
+                seen.add(mid);
+                fromCal.push({
+                    id: mid,
+                    name: u.title,
+                    initials: u.title.substring(0, 2).toUpperCase(),
+                    avatarColor: '#6366f1',
+                    duration: '—',
+                    creator: 'Calendar',
+                    status: 'coming-soon' as const,
+                    date: formatApiMeetingDate(u.startUtc),
+                });
+            }
+            setApiMeetings([...fromCal, ...apiRows]);
+        } catch {
+            setApiMeetings([]);
+        }
+    }, []);
 
-
-    ];
+    useEffect(() => {
+        refreshTableMeetings();
+    }, [refreshTableMeetings]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -169,7 +227,7 @@ const Meetings: React.FC = () => {
             const formData = new FormData();
             formData.append('File', selectedFile);
 
-            const response = await fetch('/api/Meetings/analyzeWithTranscription', {
+            const response = await fetch('/api/meetings/analyzeWithTranscription', {
                 method: 'POST',
                 body: formData,
             });
@@ -207,27 +265,73 @@ const Meetings: React.FC = () => {
         }
     };
 
-    const handleMeetingClick = (meeting: Meeting) => {
+    const handleMeetingClick = async (meeting: Meeting) => {
+        if (meeting.id.startsWith('cal-')) {
+            setMeetingsListHint(
+                'This row is a calendar event only. Open the Calendar page, pick your connection, and click “Schedule bot” on the event so the notetaker is allowed to join when the meeting starts. Events need a video link (Meet, Zoom, Teams, etc.).'
+            );
+            return;
+        }
+        setMeetingsListHint(null);
         setSelectedMeeting(meeting);
-        // Create a basic analysis result for regular meetings
-        setSelectedAnalysisResult({
-            analysis: {
-                summary: `Meeting: ${meeting.name}`,
-                keyPoints: [],
-                actionItems: [],
-                keyTakeaways: [],
-            },
-            transcript: {
-                fullText: '',
-                segments: [],
-            },
-        });
+        setDetailSource('api');
+        setApiMeetingId(meeting.id);
+        try {
+            const [detail, transcript, summary, actions] = await Promise.all([
+                imApi.getMeeting(meeting.id),
+                imApi.getTranscript(meeting.id),
+                imApi.getSummary(meeting.id),
+                imApi.getActionItems(meeting.id),
+            ]);
+            setAudioPlaybackUrl(detail.audioPlaybackUrl ?? null);
+            setApiActionItems(
+                actions.map((a) => ({
+                    id: a.id,
+                    title: a.title,
+                    description: a.description,
+                    owner: a.owner,
+                    dueDate: a.dueDate,
+                    addToTodoChecked: a.addToTodoChecked,
+                }))
+            );
+            setSelectedAnalysisResult({
+                analysis: {
+                    summary: summary.shortSummary || `Meeting: ${meeting.name}`,
+                    keyPoints: summary.keyPoints || [],
+                    actionItems: [],
+                    keyTakeaways: [],
+                },
+                transcript: {
+                    fullText: transcript.rawText || '',
+                    segments: (transcript.segments || []).map((s) => ({
+                        speaker: s.speaker,
+                        text: s.text,
+                        start: s.startSeconds,
+                        end: s.endSeconds,
+                    })),
+                },
+            });
+        } catch (e) {
+            setSelectedAnalysisResult({
+                analysis: {
+                    summary: `Could not load meeting: ${e instanceof Error ? e.message : 'error'}`,
+                    keyPoints: [],
+                    actionItems: [],
+                    keyTakeaways: [],
+                },
+                transcript: { fullText: '', segments: [] },
+            });
+            setApiActionItems([]);
+            setAudioPlaybackUrl(null);
+        }
     };
 
     const handleAnalyzedMeetingClick = (meeting: MeetingType & { analysisResult?: MeetingAnalysisResponse }) => {
-        console.log('Clicked analyzed meeting:', meeting);
+        setDetailSource('upload');
+        setApiMeetingId(null);
+        setApiActionItems([]);
+        setAudioPlaybackUrl(null);
         if (meeting.analysisResult) {
-            console.log('Setting analysis result:', meeting.analysisResult);
             setSelectedAnalysisResult(meeting.analysisResult);
             // Store the analysis result for the meeting details view
             setSelectedMeeting({
@@ -240,14 +344,31 @@ const Meetings: React.FC = () => {
                 status: 'completed',
                 date: meeting.date,
             });
-        } else {
-            console.error('No analysis result found for meeting:', meeting);
         }
     };
 
     const handleBackToMeetings = () => {
         setSelectedMeeting(null);
         setSelectedAnalysisResult(null);
+        setApiMeetingId(null);
+        setApiActionItems([]);
+        setAudioPlaybackUrl(null);
+    };
+
+    const handleConvertActionToTodo = async (actionItemId: string) => {
+        if (!apiMeetingId) return;
+        await imApi.convertActionToTodo(apiMeetingId, actionItemId);
+        const actions = await imApi.getActionItems(apiMeetingId);
+        setApiActionItems(
+            actions.map((a) => ({
+                id: a.id,
+                title: a.title,
+                description: a.description,
+                owner: a.owner,
+                dueDate: a.dueDate,
+                addToTodoChecked: a.addToTodoChecked,
+            }))
+        );
     };
 
     // If a meeting is selected and we have analysis data, show the details page
@@ -272,11 +393,13 @@ const Meetings: React.FC = () => {
                 meetingTitle={selectedMeeting.name}
                 meetingDate={selectedMeeting.date}
                 onBack={handleBackToMeetings}
+                meetingIdForApi={detailSource === 'api' ? apiMeetingId : null}
+                audioPlaybackUrl={detailSource === 'api' ? audioPlaybackUrl : null}
+                apiActionItems={detailSource === 'api' ? apiActionItems : null}
+                onConvertActionToTodo={detailSource === 'api' && apiMeetingId ? handleConvertActionToTodo : undefined}
             />
         );
     }
-
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <div className=" flex min-h-screen bg-bg-surface-lv1">
@@ -297,6 +420,18 @@ const Meetings: React.FC = () => {
 
                 <div className=" flex-1 overflow-y-auto">
                     <Container className="py-2 sm:py-2 lg:py-2">
+                        {meetingsListHint && (
+                            <div className="mb-3 rounded-8 border border-stroke-primary bg-bg-surface-pure px-3 py-2 text-sm text-text-secondary font-inter">
+                                {meetingsListHint}
+                                <button
+                                    type="button"
+                                    className="ml-2 text-primary-600 underline font-inter text-sm"
+                                    onClick={() => setMeetingsListHint(null)}
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        )}
                         <div className="flex flex-col gap-4 sm:gap-6">
                             <div className="   flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
                                 <div className="flex-1 w-full sm:w-auto">
@@ -475,7 +610,7 @@ const Meetings: React.FC = () => {
 
                             {showAllMeetings && (
                                 <MeetingsTable
-                                    meetings={meetings}
+                                    meetings={apiMeetings}
                                     analyzedMeetings={analyzedMeetings.map(m => ({ id: m.id, title: m.title, date: m.date }))}
                                     onMeetingClick={handleMeetingClick}
                                     onAnalyzedMeetingClick={(m) => {
@@ -533,7 +668,9 @@ const Meetings: React.FC = () => {
                                 <div className="flex flex-1 gap-2 items-center p-0 relative shrink-0">
                                     <input
                                         type="text"
-                                        placeholder="Placeholder"
+                                        value={liveName}
+                                        onChange={(e) => setLiveName(e.target.value)}
+                                        placeholder="Optional display name"
                                         className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden relative shrink-0 text-text-secondary tracking-[-0.176px] border-none outline-none bg-transparent flex-1"
                                     />
                                 </div>
@@ -558,15 +695,17 @@ const Meetings: React.FC = () => {
                                         <path d="M12.5 2.5H17.5V7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                     <input
-                                        type="text"
-                                        placeholder="Placeholder"
+                                        type="url"
+                                        value={liveLink}
+                                        onChange={(e) => setLiveLink(e.target.value)}
+                                        placeholder="https://meet.google.com/..."
                                         className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden relative shrink-0 text-text-secondary tracking-[-0.176px] border-none outline-none bg-transparent flex-1"
                                     />
                                 </div>
                             </div>
                         </div>
 
-
+                        {liveJoinBusy && <p className="text-sm text-text-secondary font-inter">Sending bot…</p>}
 
                         <div className="flex gap-3 items-start relative shrink-0">
                             <button
@@ -580,14 +719,27 @@ const Meetings: React.FC = () => {
                                 </div>
                             </button>
                             <button
-                                onClick={() => {
-                                    setIsModalOpen(false);
-                                    setIsSuccessModalOpen(true);
+                                type="button"
+                                disabled={liveJoinBusy || !liveLink.trim()}
+                                onClick={async () => {
+                                    setLiveJoinBusy(true);
+                                    try {
+                                        await imApi.joinBot(liveLink.trim(), liveName.trim() || 'IntelliMeet Notetaker');
+                                        setIsModalOpen(false);
+                                        setLiveLink('');
+                                        setLiveName('');
+                                        setIsSuccessModalOpen(true);
+                                        await refreshTableMeetings();
+                                    } catch {
+                                        setIsSuccessModalOpen(false);
+                                    } finally {
+                                        setLiveJoinBusy(false);
+                                    }
                                 }}
-                                className="bg-bg-surface-lv1 flex gap-1 items-center justify-center overflow-hidden px-[10px] py-2 relative rounded-8 shrink-0 cursor-pointer"
+                                className="bg-primary-500 flex gap-1 items-center justify-center overflow-hidden px-[10px] py-2 relative rounded-8 shrink-0 cursor-pointer disabled:opacity-50 text-white"
                             >
                                 <div className="flex items-center justify-center px-1 py-0 relative shrink-0">
-                                    <div className="flex flex-col font-inter font-medium justify-center leading-0 relative shrink-0 text-sm text-text-tertiary tracking-[-0.084px] whitespace-nowrap">
+                                    <div className="flex flex-col font-inter font-medium justify-center leading-0 relative shrink-0 text-sm tracking-[-0.084px] whitespace-nowrap">
                                         <p className="leading-5 m-0">Start Capturing</p>
                                     </div>
                                 </div>
