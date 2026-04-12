@@ -14,4 +14,7 @@ public sealed class ActionItem
     public string Status { get; set; } = "open";
     public bool AddToTodoChecked { get; set; }
     public Guid? LinkedTodoItemId { get; set; }
+
+    /// <summary>When <c>groq</c>, item was produced by Groq analysis and can be replaced on re-run.</summary>
+    public string? Source { get; set; }
 }

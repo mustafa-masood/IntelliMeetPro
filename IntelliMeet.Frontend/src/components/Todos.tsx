@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
+import MobileMenuButton from './MobileMenuButton';
 import SearchBar from './SearchBar';
 import { imApi, type TodoItemDto } from '../api/intellimeet';
 
 const Todos: React.FC = () => {
     const [items, setItems] = useState<TodoItemDto[]>([]);
     const [err, setErr] = useState<string | null>(null);
+    const [filter, setFilter] = useState<'all' | 'open' | 'done'>('all');
+    const [busyId, setBusyId] = useState<string | null>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const load = async () => {
         try {
@@ -21,106 +25,204 @@ const Todos: React.FC = () => {
         void load();
     }, []);
 
+    const stats = useMemo(() => {
+        const open = items.filter((i) => i.status !== 1).length;
+        const done = items.length - open;
+        return { open, done, total: items.length };
+    }, [items]);
+
+    const visible = useMemo(() => {
+        if (filter === 'open') return items.filter((i) => i.status !== 1);
+        if (filter === 'done') return items.filter((i) => i.status === 1);
+        return items;
+    }, [items, filter]);
+
     const formatDue = (iso?: string | null) => {
-        if (!iso) return '—';
+        if (!iso) return null;
         try {
-            return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
         } catch {
             return iso;
         }
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
-            <Sidebar />
+        <div className="flex min-h-screen bg-bg-surface-lv1">
+            <MobileMenuButton isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+            <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
-            <div className="ml-[270px] flex-1 flex flex-col h-screen overflow-hidden relative">
-                <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-100">
-                    <SearchBar />
+            <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-14 flex items-center px-4 sm:px-8 shrink-0">
+                    <SearchBar placeholder="Search to-dos…" className="sm:w-72" />
                 </div>
 
-                <div className="px-8 pt-[10px] flex flex-col gap-4 max-w-[1106px] w-full mx-auto">
-                    <div className="flex items-center justify-between w-full">
-                        <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0">Notes</h1>
-                        <button
-                            type="button"
-                            onClick={() => void load()}
-                            className="text-sm font-inter text-primary-600 underline"
-                        >
-                            Refresh
-                        </button>
-                    </div>
-                    {err && <p className="text-sm text-amber-700 font-inter">{err}</p>}
-                </div>
+                <div className="flex-1 overflow-y-auto">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6">
+                        <header>
+                            <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
+                                Workspace
+                            </p>
+                            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                                <div>
+                                    <h1 className="font-inter-tight font-medium text-2xl sm:text-3xl text-text-primary m-0 tracking-tight">
+                                        To-Dos
+                                    </h1>
+                                    <p className="text-sm text-text-secondary font-inter m-0 mt-2 max-w-lg">
+                                        Tasks promoted from meeting action items stay linked to their source. Toggle status to track what is
+                                        still open.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => void load()}
+                                    className="self-start px-4 py-2 rounded-10 border border-stroke-secondary bg-bg-surface-pure text-sm font-inter font-medium text-text-primary hover:bg-bg-surface-lv1 transition-colors"
+                                >
+                                    Refresh
+                                </button>
+                            </div>
+                        </header>
 
-                <div className="flex-1 px-8 py-4 max-w-[1106px] w-full mx-auto">
-                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-16 shadow-card flex flex-col gap-4 p-4 overflow-y-auto">
-                        <div className="flex items-center gap-2 py-1">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M4 4H20V20H4V4Z" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 8H16" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 12H16" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 16H12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            <h2 className="font-inter font-medium text-base leading-6 text-text-primary tracking-[-0.176px] m-0">
-                                Your To-do&apos;s
-                            </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {[
+                                { label: 'Open', value: stats.open, accent: 'border-l-primary-500' },
+                                { label: 'Done', value: stats.done, accent: 'border-l-text-tertiary' },
+                                { label: 'Total', value: stats.total, accent: 'border-l-stroke-secondary' },
+                            ].map((s) => (
+                                <div
+                                    key={s.label}
+                                    className={`rounded-12 border border-stroke-primary bg-bg-surface-pure p-4 shadow-sm border-l-4 ${s.accent}`}
+                                >
+                                    <p className="text-xs font-inter font-medium text-text-tertiary m-0">{s.label}</p>
+                                    <p className="text-2xl font-inter-tight font-semibold text-text-primary m-0 mt-1">{s.value}</p>
+                                </div>
+                            ))}
                         </div>
 
-                        <div className="flex flex-col gap-3 max-h-[calc(100vh-220px)] overflow-y-auto">
-                            {items.length === 0 && !err && (
-                                <p className="text-sm text-text-secondary font-inter">No todos yet. Check an action item on a meeting to add one.</p>
+                        <div className="flex flex-wrap gap-2">
+                            {(
+                                [
+                                    ['all', 'All'],
+                                    ['open', 'Open'],
+                                    ['done', 'Done'],
+                                ] as const
+                            ).map(([id, label]) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => setFilter(id)}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-inter font-medium transition-all ${
+                                        filter === id
+                                            ? 'bg-primary-500 text-white shadow-sm'
+                                            : 'bg-bg-surface-pure border border-stroke-primary text-text-secondary hover:border-stroke-secondary'
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {err && (
+                            <div className="rounded-12 border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-text-primary font-inter">
+                                {err}
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-3 pb-10">
+                            {visible.length === 0 && !err && (
+                                <div className="rounded-12 border border-dashed border-stroke-secondary bg-bg-surface-pure/80 px-6 py-12 text-center">
+                                    <p className="font-inter font-medium text-text-primary m-0">Nothing here yet</p>
+                                    <p className="text-sm text-text-secondary font-inter m-0 mt-2 max-w-md mx-auto">
+                                        Open a meeting, then check an action item to send it to this list.
+                                    </p>
+                                </div>
                             )}
-                            {items.map((item) => (
-                                <div key={item.id} className="bg-bg-surface-pure border border-stroke-primary rounded-12 p-3 flex items-start justify-between gap-3">
-                                    <div className="flex flex-col gap-3 flex-1 max-w-[544px]">
-                                        <label className="flex items-start gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                className="mt-1"
-                                                checked={item.status === 1}
-                                                onChange={async () => {
-                                                    const next = item.status === 1 ? 0 : 1;
+                            {visible.map((item) => {
+                                const done = item.status === 1;
+                                const due = formatDue(item.dueDate);
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`group rounded-12 border border-stroke-primary bg-bg-surface-pure p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow ${
+                                            done ? 'opacity-80' : ''
+                                        }`}
+                                    >
+                                        <div className="flex gap-4 items-start">
+                                            <button
+                                                type="button"
+                                                disabled={busyId === item.id}
+                                                onClick={async () => {
+                                                    const next = done ? 0 : 1;
+                                                    setBusyId(item.id);
                                                     try {
                                                         await imApi.patchTodo(item.id, { status: next });
                                                         await load();
                                                     } catch {
-                                                        /* ignore */
+                                                        /* keep UI stable */
+                                                    } finally {
+                                                        setBusyId(null);
                                                     }
                                                 }}
-                                            />
-                                            <div className="flex flex-col gap-1">
-                                                <p className="font-inter font-medium text-sm leading-5 text-text-primary tracking-[-0.084px] m-0">
+                                                className={`mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
+                                                    done
+                                                        ? 'bg-primary-500 border-primary-500 text-white'
+                                                        : 'border-stroke-secondary hover:border-primary-500'
+                                                } disabled:opacity-50`}
+                                                aria-pressed={done}
+                                                aria-label={done ? 'Mark as open' : 'Mark as done'}
+                                            >
+                                                {done && (
+                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                                                        <path
+                                                            d="M11.5 3.5L5.5 10L2.5 7"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                            <div className="flex-1 min-w-0">
+                                                <p
+                                                    className={`font-inter font-semibold text-base m-0 ${
+                                                        done ? 'text-text-tertiary line-through' : 'text-text-primary'
+                                                    }`}
+                                                >
                                                     {item.title}
                                                 </p>
                                                 {item.description && (
-                                                    <p className="font-inter font-normal text-sm leading-5 text-text-secondary tracking-[-0.084px] m-0">
-                                                        {item.description}
-                                                    </p>
+                                                    <p className="font-inter text-sm text-text-secondary leading-6 m-0 mt-1">{item.description}</p>
                                                 )}
-                                            </div>
-                                        </label>
-                                        <div className="flex gap-2 items-center flex-wrap">
-                                            <div className="bg-[#d1f1eb] flex gap-0 items-center justify-center p-1 rounded-8">
-                                                <span className="font-inter font-normal text-xs leading-4 text-text-primary px-1">{item.type}</span>
-                                            </div>
-                                            <div className="flex gap-1 items-center">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                    <path d="M6.66667 2V5.33333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    <path d="M9.33333 2V5.33333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    <path d="M2.66667 6.66667H13.3333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    <path d="M3.33333 3.33333H12.6667C13.403 3.33333 14 3.93029 14 4.66667V13.3333C14 14.0697 13.403 14.6667 12.6667 14.6667H3.33333C2.59695 14.6667 2 14.0697 2 13.3333V4.66667C2 3.93029 2.59695 3.33333 3.33333 3.33333Z" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                <span className="font-inter font-normal text-xs leading-4 text-text-secondary">{formatDue(item.dueDate)}</span>
+                                                <div className="flex flex-wrap gap-2 mt-3 items-center">
+                                                    <span className="text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-primary-50 text-primary-500 border border-primary-100">
+                                                        {item.type}
+                                                    </span>
+                                                    {due && (
+                                                        <span className="text-xs font-inter text-text-tertiary flex items-center gap-1">
+                                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+                                                                <path
+                                                                    d="M8 2V5M8 8H11M3 3H13C13.5523 3 14 3.44772 14 4V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4C2 3.44772 2.44772 3 3 3Z"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="1.2"
+                                                                    strokeLinecap="round"
+                                                                />
+                                                            </svg>
+                                                            {due}
+                                                        </span>
+                                                    )}
+                                                    {item.sourceMeetingId && (
+                                                        <span className="text-[11px] font-inter text-text-disable">From meeting</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

@@ -9,8 +9,13 @@ namespace IntelliMeet.Backend.Controllers;
 public class MeetingsApiController : ControllerBase
 {
     private readonly IMeetingsApiService _meetings;
+    private readonly IMeetingGroqAnalysisService _groqAnalysis;
 
-    public MeetingsApiController(IMeetingsApiService meetings) => _meetings = meetings;
+    public MeetingsApiController(IMeetingsApiService meetings, IMeetingGroqAnalysisService groqAnalysis)
+    {
+        _meetings = meetings;
+        _groqAnalysis = groqAnalysis;
+    }
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MeetingListItemDto>>> List(CancellationToken ct) =>
@@ -58,5 +63,24 @@ public class MeetingsApiController : ControllerBase
     {
         var a = await _meetings.AssignTaskAsync(id, body, ct).ConfigureAwait(false);
         return Ok(a);
+    }
+
+    /// <summary>Resolves transcript (including Meeting BaaS artifact URLs), runs Groq JSON analysis, persists summary / key points / action items.</summary>
+    [HttpPost("{id:guid}/groq-analyze")]
+    public async Task<IActionResult> GroqAnalyze(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _groqAnalysis.AnalyzeAndPersistAsync(id, ct).ConfigureAwait(false);
+            return Ok(new { ok = true });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, error = ex.Message });
+        }
     }
 }

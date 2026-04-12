@@ -58,6 +58,12 @@ const Meetings: React.FC = () => {
     const [liveLink, setLiveLink] = useState('');
     const [liveName, setLiveName] = useState('');
     const [liveJoinBusy, setLiveJoinBusy] = useState(false);
+    const [liveJoinError, setLiveJoinError] = useState<string | null>(null);
+    const [apiDetailMeta, setApiDetailMeta] = useState<{
+        meetingUrl: string | null;
+        platform: string | null;
+        bots: { id: string; externalBotId: string; status: number; transcriptionStatus: number }[];
+    } | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [meetingsListHint, setMeetingsListHint] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,6 +189,7 @@ const Meetings: React.FC = () => {
 
     const handleAddToLiveMeeting = () => {
         setIsDropdownOpen(false);
+        setLiveJoinError(null);
         setIsModalOpen(true);
     };
 
@@ -276,34 +283,71 @@ const Meetings: React.FC = () => {
         setSelectedMeeting(meeting);
         setDetailSource('api');
         setApiMeetingId(meeting.id);
+        setApiDetailMeta(null);
         try {
-            const [detail, transcript, summary, actions] = await Promise.all([
-                imApi.getMeeting(meeting.id),
+            // Load meeting first so backend syncs Meeting BaaS bot details + artifact URLs before transcript fetch (avoids race).
+            const detail = await imApi.getMeeting(meeting.id);
+            const [transcript, summary, actions] = await Promise.all([
                 imApi.getTranscript(meeting.id),
                 imApi.getSummary(meeting.id),
                 imApi.getActionItems(meeting.id),
             ]);
+            setApiDetailMeta({
+                meetingUrl: detail.meetingUrl ?? null,
+                platform: detail.platform ?? null,
+                bots: detail.bots ?? [],
+            });
             setAudioPlaybackUrl(detail.audioPlaybackUrl ?? null);
+
+            const hasTranscriptBody =
+                (transcript.rawText && transcript.rawText.trim().length > 0) ||
+                (transcript.segments && transcript.segments.length > 0);
+            const hasTranscriptSource =
+                hasTranscriptBody ||
+                !!(transcript.externalTranscriptionUrl && transcript.externalTranscriptionUrl.trim()) ||
+                !!(transcript.externalRawTranscriptionUrl && transcript.externalRawTranscriptionUrl.trim());
+            /** Run Groq whenever we can resolve text or have segments/URL — do not require meeting "Completed" (status 3). */
+            const runGroq = hasTranscriptSource;
+
+            let finalSummary = summary;
+            let finalActions = actions;
+            let transcriptForUi = transcript;
+            if (runGroq) {
+                try {
+                    await imApi.groqAnalyzeMeeting(meeting.id);
+                    const [t2, s2, a2] = await Promise.all([
+                        imApi.getTranscript(meeting.id),
+                        imApi.getSummary(meeting.id),
+                        imApi.getActionItems(meeting.id),
+                    ]);
+                    transcriptForUi = t2;
+                    finalSummary = s2;
+                    finalActions = a2;
+                } catch {
+                    /* Groq optional: show transcript without AI refresh */
+                }
+            }
+
             setApiActionItems(
-                actions.map((a) => ({
+                finalActions.map((a) => ({
                     id: a.id,
                     title: a.title,
                     description: a.description,
                     owner: a.owner,
-                    dueDate: a.dueDate,
+                    dueDate: a.dueDate != null ? String(a.dueDate) : null,
                     addToTodoChecked: a.addToTodoChecked,
                 }))
             );
             setSelectedAnalysisResult({
                 analysis: {
-                    summary: summary.shortSummary || `Meeting: ${meeting.name}`,
-                    keyPoints: summary.keyPoints || [],
+                    summary: finalSummary.shortSummary || `Meeting: ${meeting.name}`,
+                    keyPoints: Array.isArray(finalSummary.keyPoints) ? finalSummary.keyPoints : [],
                     actionItems: [],
                     keyTakeaways: [],
                 },
                 transcript: {
-                    fullText: transcript.rawText || '',
-                    segments: (transcript.segments || []).map((s) => ({
+                    fullText: transcriptForUi.rawText || '',
+                    segments: (transcriptForUi.segments || []).map((s) => ({
                         speaker: s.speaker,
                         text: s.text,
                         start: s.startSeconds,
@@ -312,6 +356,7 @@ const Meetings: React.FC = () => {
                 },
             });
         } catch (e) {
+            setApiDetailMeta(null);
             setSelectedAnalysisResult({
                 analysis: {
                     summary: `Could not load meeting: ${e instanceof Error ? e.message : 'error'}`,
@@ -326,9 +371,67 @@ const Meetings: React.FC = () => {
         }
     };
 
+    // While viewing an API-backed meeting, poll Meeting BaaS sync (status + artifacts) for live bot/transcript updates without relying on webhooks to localhost.
+    useEffect(() => {
+        if (!apiMeetingId || detailSource !== 'api' || !selectedMeeting) return;
+
+        const refresh = async () => {
+            try {
+                const detail = await imApi.getMeeting(apiMeetingId);
+                const [transcript, summary, actions] = await Promise.all([
+                    imApi.getTranscript(apiMeetingId),
+                    imApi.getSummary(apiMeetingId),
+                    imApi.getActionItems(apiMeetingId),
+                ]);
+                setApiDetailMeta({
+                    meetingUrl: detail.meetingUrl ?? null,
+                    platform: detail.platform ?? null,
+                    bots: detail.bots ?? [],
+                });
+                setAudioPlaybackUrl(detail.audioPlaybackUrl ?? null);
+                setApiActionItems(
+                    actions.map((a) => ({
+                        id: a.id,
+                        title: a.title,
+                        description: a.description,
+                        owner: a.owner,
+                        dueDate: a.dueDate != null ? String(a.dueDate) : null,
+                        addToTodoChecked: a.addToTodoChecked,
+                    }))
+                );
+                setSelectedAnalysisResult((prev) => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        analysis: {
+                            ...prev.analysis,
+                            summary: summary.shortSummary?.trim() || prev.analysis.summary,
+                            keyPoints: Array.isArray(summary.keyPoints) ? summary.keyPoints : prev.analysis.keyPoints,
+                        },
+                        transcript: {
+                            fullText: transcript.rawText || '',
+                            segments: (transcript.segments || []).map((s) => ({
+                                speaker: s.speaker,
+                                text: s.text,
+                                start: s.startSeconds,
+                                end: s.endSeconds,
+                            })),
+                        },
+                    };
+                });
+            } catch {
+                /* ignore */
+            }
+        };
+
+        const id = window.setInterval(refresh, 12000);
+        return () => window.clearInterval(id);
+    }, [apiMeetingId, detailSource, selectedMeeting]);
+
     const handleAnalyzedMeetingClick = (meeting: MeetingType & { analysisResult?: MeetingAnalysisResponse }) => {
         setDetailSource('upload');
         setApiMeetingId(null);
+        setApiDetailMeta(null);
         setApiActionItems([]);
         setAudioPlaybackUrl(null);
         if (meeting.analysisResult) {
@@ -351,6 +454,7 @@ const Meetings: React.FC = () => {
         setSelectedMeeting(null);
         setSelectedAnalysisResult(null);
         setApiMeetingId(null);
+        setApiDetailMeta(null);
         setApiActionItems([]);
         setAudioPlaybackUrl(null);
     };
@@ -365,7 +469,7 @@ const Meetings: React.FC = () => {
                 title: a.title,
                 description: a.description,
                 owner: a.owner,
-                dueDate: a.dueDate,
+                dueDate: a.dueDate != null ? String(a.dueDate) : null,
                 addToTodoChecked: a.addToTodoChecked,
             }))
         );
@@ -397,6 +501,9 @@ const Meetings: React.FC = () => {
                 audioPlaybackUrl={detailSource === 'api' ? audioPlaybackUrl : null}
                 apiActionItems={detailSource === 'api' ? apiActionItems : null}
                 onConvertActionToTodo={detailSource === 'api' && apiMeetingId ? handleConvertActionToTodo : undefined}
+                meetingUrl={detailSource === 'api' ? apiDetailMeta?.meetingUrl ?? null : null}
+                meetingPlatform={detailSource === 'api' ? apiDetailMeta?.platform ?? null : null}
+                meetingBots={detailSource === 'api' ? apiDetailMeta?.bots ?? null : null}
             />
         );
     }
@@ -414,8 +521,8 @@ const Meetings: React.FC = () => {
             />
 
             <main className=" flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure border-b border-stroke-primary h-16 flex items-center px-7 sm:px-7">
-                    <SearchBar placeholder="Search meetings..." className="sm:w-64" />
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-16 flex items-center px-7 sm:px-7">
+                    <SearchBar placeholder="Search meetings…" className="sm:w-64" />
                 </div>
 
                 <div className=" flex-1 overflow-y-auto">
@@ -433,11 +540,19 @@ const Meetings: React.FC = () => {
                             </div>
                         )}
                         <div className="flex flex-col gap-4 sm:gap-6">
-                            <div className="   flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
                                 <div className="flex-1 w-full sm:w-auto">
+                                    <p className="text-[11px] font-inter font-medium uppercase tracking-wider text-text-tertiary m-0 mb-1">
+                                        Meeting BaaS · Bots & recordings
+                                    </p>
                                     <h1 className="font-inter-tight font-medium text-xl sm:text-2xl leading-8 text-text-primary m-0">
                                         My Meetings
                                     </h1>
+                                    <p className="text-sm text-text-secondary font-inter m-0 mt-1 max-w-lg">
+                                        Live bots via <code className="text-xs bg-bg-surface-lv1 px-1 rounded">POST /v2/bots</code>, scheduled
+                                        bots from Calendar, transcripts from{' '}
+                                        <code className="text-xs bg-bg-surface-lv1 px-1 rounded">/v2/transcription</code>.
+                                    </p>
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center w-full sm:w-auto relative">
                                     <button
@@ -706,6 +821,9 @@ const Meetings: React.FC = () => {
                         </div>
 
                         {liveJoinBusy && <p className="text-sm text-text-secondary font-inter">Sending bot…</p>}
+                        {liveJoinError && (
+                            <p className="text-sm text-orange-700 font-inter m-0 w-full">{liveJoinError}</p>
+                        )}
 
                         <div className="flex gap-3 items-start relative shrink-0">
                             <button
@@ -723,6 +841,7 @@ const Meetings: React.FC = () => {
                                 disabled={liveJoinBusy || !liveLink.trim()}
                                 onClick={async () => {
                                     setLiveJoinBusy(true);
+                                    setLiveJoinError(null);
                                     try {
                                         await imApi.joinBot(liveLink.trim(), liveName.trim() || 'IntelliMeet Notetaker');
                                         setIsModalOpen(false);
@@ -730,8 +849,9 @@ const Meetings: React.FC = () => {
                                         setLiveName('');
                                         setIsSuccessModalOpen(true);
                                         await refreshTableMeetings();
-                                    } catch {
+                                    } catch (e) {
                                         setIsSuccessModalOpen(false);
+                                        setLiveJoinError(e instanceof Error ? e.message : 'Could not invite bot');
                                     } finally {
                                         setLiveJoinBusy(false);
                                     }

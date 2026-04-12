@@ -72,11 +72,20 @@ public sealed class BotDetailsData
     [JsonPropertyName("bot_id")]
     public string? BotId { get; set; }
 
+    [JsonPropertyName("bot_name")]
+    public string? BotName { get; set; }
+
     [JsonPropertyName("status")]
     public string? Status { get; set; }
 
     [JsonPropertyName("meeting_url")]
     public string? MeetingUrl { get; set; }
+
+    [JsonPropertyName("meeting_platform")]
+    public string? MeetingPlatform { get; set; }
+
+    [JsonPropertyName("recording_mode")]
+    public string? RecordingMode { get; set; }
 
     [JsonPropertyName("video")]
     public string? Video { get; set; }
@@ -87,8 +96,14 @@ public sealed class BotDetailsData
     [JsonPropertyName("transcription")]
     public string? Transcription { get; set; }
 
+    [JsonPropertyName("raw_transcription")]
+    public string? RawTranscription { get; set; }
+
     [JsonPropertyName("diarization")]
     public string? Diarization { get; set; }
+
+    [JsonPropertyName("chat_messages")]
+    public string? ChatMessages { get; set; }
 
     [JsonPropertyName("duration_seconds")]
     public double? DurationSeconds { get; set; }
@@ -98,6 +113,54 @@ public sealed class BotDetailsData
 
     [JsonPropertyName("updated_at")]
     public string? UpdatedAt { get; set; }
+
+    [JsonPropertyName("joined_at")]
+    public string? JoinedAt { get; set; }
+
+    [JsonPropertyName("exited_at")]
+    public string? ExitedAt { get; set; }
+
+    [JsonPropertyName("artifacts_deleted")]
+    public bool? ArtifactsDeleted { get; set; }
+
+    [JsonPropertyName("participants")]
+    public List<MbPersonRefData>? Participants { get; set; }
+
+    [JsonPropertyName("speakers")]
+    public List<MbPersonRefData>? Speakers { get; set; }
+
+    [JsonPropertyName("transcription_provider")]
+    public string? TranscriptionProvider { get; set; }
+
+    [JsonPropertyName("transcription_ids")]
+    public List<string>? TranscriptionIds { get; set; }
+
+    [JsonPropertyName("error_code")]
+    public string? ErrorCode { get; set; }
+
+    [JsonPropertyName("error_message")]
+    public string? ErrorMessage { get; set; }
+
+    [JsonPropertyName("tokens")]
+    public JsonElement? Tokens { get; set; }
+
+    [JsonPropertyName("extra")]
+    public JsonElement? Extra { get; set; }
+
+    [JsonPropertyName("zoom_config")]
+    public JsonElement? ZoomConfig { get; set; }
+}
+
+public sealed class MbPersonRefData
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("display_name")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("id")]
+    public JsonElement? Id { get; set; }
 }
 
 public sealed class BotStatusData
@@ -166,6 +229,10 @@ public sealed class CalendarListItemData
 {
     [JsonPropertyName("calendar_id")]
     public string? CalendarId { get; set; }
+
+    /// <summary>Some list responses use <c>uuid</c> as the calendar identifier.</summary>
+    [JsonPropertyName("uuid")]
+    public string? Uuid { get; set; }
 
     [JsonPropertyName("raw_calendar_id")]
     public string? RawCalendarId { get; set; }
@@ -255,4 +322,163 @@ public sealed class ScheduleCalendarBotData
 {
     [JsonPropertyName("bot_id")]
     public string? BotId { get; set; }
+}
+
+/// <summary>Query for GET v2/bots (cursor pagination).</summary>
+public sealed record ListBotsQuery(
+    int Limit = 50,
+    string? Cursor = null,
+    string? MeetingUrl = null,
+    string? BotId = null,
+    string? Status = null,
+    string? MeetingPlatform = null,
+    string? CreatedAfter = null,
+    string? CreatedBefore = null);
+
+/// <summary>Query for GET v2/bots/scheduled.</summary>
+public sealed record ListScheduledBotsQuery(
+    int Limit = 50,
+    string? Cursor = null,
+    string? MeetingUrl = null,
+    string? BotId = null,
+    string? Status = null,
+    string? MeetingPlatform = null,
+    string? ScheduledAfter = null,
+    string? ScheduledBefore = null);
+
+public sealed class BotsListPageResult
+{
+    public IReadOnlyList<BotListItemData> Items { get; init; } = Array.Empty<BotListItemData>();
+    public string? NextCursor { get; init; }
+    public string? PrevCursor { get; init; }
+}
+
+public sealed class BotListItemData
+{
+    [JsonPropertyName("bot_id")]
+    public string? BotId { get; set; }
+
+    [JsonPropertyName("bot_name")]
+    public string? BotName { get; set; }
+
+    [JsonPropertyName("meeting_url")]
+    public string? MeetingUrl { get; set; }
+
+    [JsonPropertyName("meeting_platform")]
+    public string? MeetingPlatform { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("duration")]
+    public double? Duration { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("ended_at")]
+    public string? EndedAt { get; set; }
+
+    [JsonPropertyName("joined_at")]
+    public string? JoinedAt { get; set; }
+
+    [JsonPropertyName("exited_at")]
+    public string? ExitedAt { get; set; }
+
+    [JsonPropertyName("error_code")]
+    public string? ErrorCode { get; set; }
+
+    [JsonPropertyName("error_message")]
+    public string? ErrorMessage { get; set; }
+
+    [JsonPropertyName("extra")]
+    public JsonElement? Extra { get; set; }
+
+    [JsonPropertyName("tokens")]
+    public JsonElement? Tokens { get; set; }
+}
+
+public sealed class ScheduledBotListItemData
+{
+    [JsonPropertyName("bot_id")]
+    public string? BotId { get; set; }
+
+    [JsonPropertyName("bot_name")]
+    public string? BotName { get; set; }
+
+    [JsonPropertyName("meeting_url")]
+    public string? MeetingUrl { get; set; }
+
+    [JsonPropertyName("meeting_platform")]
+    public string? MeetingPlatform { get; set; }
+
+    [JsonPropertyName("join_at")]
+    public string? JoinAt { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public string? UpdatedAt { get; set; }
+
+    [JsonPropertyName("extra")]
+    public JsonElement? Extra { get; set; }
+}
+
+public sealed class ScheduledBotsListPageResult
+{
+    public IReadOnlyList<ScheduledBotListItemData> Items { get; init; } = Array.Empty<ScheduledBotListItemData>();
+    public string? NextCursor { get; init; }
+    public string? PrevCursor { get; init; }
+}
+
+public sealed class ScheduledBotDetailsData
+{
+    [JsonPropertyName("bot_id")]
+    public string? BotId { get; set; }
+
+    [JsonPropertyName("bot_name")]
+    public string? BotName { get; set; }
+
+    [JsonPropertyName("bot_image")]
+    public string? BotImage { get; set; }
+
+    [JsonPropertyName("meeting_url")]
+    public string? MeetingUrl { get; set; }
+
+    [JsonPropertyName("meeting_platform")]
+    public string? MeetingPlatform { get; set; }
+
+    [JsonPropertyName("recording_mode")]
+    public string? RecordingMode { get; set; }
+
+    [JsonPropertyName("join_at")]
+    public string? JoinAt { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public string? CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public string? UpdatedAt { get; set; }
+
+    [JsonPropertyName("cancelled_at")]
+    public string? CancelledAt { get; set; }
+
+    [JsonPropertyName("allow_multiple_bots")]
+    public bool? AllowMultipleBots { get; set; }
+
+    [JsonPropertyName("entry_message")]
+    public string? EntryMessage { get; set; }
+
+    [JsonPropertyName("transcription_config")]
+    public JsonElement? TranscriptionConfig { get; set; }
+
+    [JsonPropertyName("extra")]
+    public JsonElement? Extra { get; set; }
 }

@@ -72,6 +72,27 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         var clientSecret = !string.IsNullOrWhiteSpace(request.OAuthClientSecret) ? request.OAuthClientSecret! : _google.ClientSecret;
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
             throw new InvalidOperationException("OAuth client id/secret must be supplied or configured under GoogleOAuth.");
+
+        var existingForUser = _connections.GetAll()
+            .FirstOrDefault(c => c.UserId == request.UserId
+                && string.Equals(c.RawCalendarId, request.RawCalendarId, StringComparison.Ordinal));
+        if (existingForUser is not null)
+        {
+            existingForUser.OAuthRefreshToken = request.OAuthRefreshToken;
+            existingForUser.UpdatedAt = DateTimeOffset.UtcNow;
+            _connections.Upsert(existingForUser);
+            try
+            {
+                await SyncAsync(existingForUser.Id, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Calendar sync after reconnect (local) failed; user can use Sync now.");
+            }
+
+            return MapConn(existingForUser);
+        }
+
         var credId = Guid.NewGuid();
         var cred = new IntegrationCredentials
         {
@@ -97,15 +118,47 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         var externalCalId = res.Data?.CalendarId ?? res.Data?.Uuid;
         if (!res.Success || string.IsNullOrWhiteSpace(externalCalId))
         {
-            var msg = res.ErrorMessage ?? "Meeting BaaS did not return a calendar id.";
-            if (!string.IsNullOrWhiteSpace(res.RawBody) &&
-                (string.Equals(msg, "Bad Request", StringComparison.OrdinalIgnoreCase) || msg.Length < 12))
+            if (IsCalendarAlreadyExistsConflict(res))
             {
-                var raw = res.RawBody.Trim();
-                if (raw.Length > 480) raw = raw[..480] + "…";
-                msg = $"{msg} — {raw}";
+                externalCalId = await ResolveExternalCalendarIdFromMeetingBaasListAsync(request.RawCalendarId, ct).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(externalCalId))
+                    _logger.LogInformation("Resolved existing Meeting BaaS calendar after create conflict (raw id {Raw}).", request.RawCalendarId);
             }
-            throw new InvalidOperationException(msg);
+
+            if (string.IsNullOrWhiteSpace(externalCalId))
+            {
+                var msg = res.ErrorMessage ?? "Meeting BaaS did not return a calendar id.";
+                if (!string.IsNullOrWhiteSpace(res.RawBody) &&
+                    (string.Equals(msg, "Bad Request", StringComparison.OrdinalIgnoreCase) || msg.Length < 12))
+                {
+                    var raw = res.RawBody.Trim();
+                    if (raw.Length > 480) raw = raw[..480] + "…";
+                    msg = $"{msg} — {raw}";
+                }
+
+                throw new InvalidOperationException(msg);
+            }
+        }
+
+        var byExternal = _connections.GetByExternalId(externalCalId);
+        if (byExternal is not null && byExternal.UserId == request.UserId)
+        {
+            byExternal.RawCalendarId = request.RawCalendarId;
+            byExternal.OAuthRefreshToken = request.OAuthRefreshToken;
+            byExternal.IntegrationCredentialsId = credId;
+            byExternal.Status = "connected";
+            byExternal.UpdatedAt = DateTimeOffset.UtcNow;
+            _connections.Upsert(byExternal);
+            try
+            {
+                await SyncAsync(byExternal.Id, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Initial calendar sync after connect failed; user can use Sync now.");
+            }
+
+            return MapConn(byExternal);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -133,6 +186,26 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             _logger.LogWarning(ex, "Initial calendar sync after connect failed; user can use Sync now.");
         }
         return MapConn(conn);
+    }
+
+    private static bool IsCalendarAlreadyExistsConflict(MeetingBaasResult<CalendarCreatedData> res)
+    {
+        if (res.StatusCode == 409)
+            return true;
+        var blob = $"{res.ErrorMessage} {res.RawBody}";
+        return blob.Contains("FST_ERR_CALENDAR_CONNECTION_ALREADY_EXISTS", StringComparison.OrdinalIgnoreCase)
+               || blob.Contains("already exists", StringComparison.OrdinalIgnoreCase)
+               || blob.Contains("Conflict", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<string?> ResolveExternalCalendarIdFromMeetingBaasListAsync(string rawCalendarId, CancellationToken ct)
+    {
+        var list = await _mb.ListCalendarsAsync(ct).ConfigureAwait(false);
+        if (!list.Success || list.Data is null || list.Data.Count == 0)
+            return null;
+        var match = list.Data.FirstOrDefault(c =>
+            string.Equals(c.RawCalendarId, rawCalendarId, StringComparison.Ordinal));
+        return match?.CalendarId ?? match?.Uuid;
     }
 
     public Task<IReadOnlyList<CalendarConnectionDto>> ListAsync(CancellationToken ct) =>

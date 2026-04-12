@@ -43,7 +43,15 @@ public class MeetingBaasWebhooksController : ControllerBase
             {
                 var headers = new WebHeaderCollection();
                 foreach (var h in Request.Headers)
-                    headers.Add(h.Key, h.Value.ToString());
+                {
+                    if (h.Key.StartsWith(":", StringComparison.Ordinal))
+                        continue;
+                    if (h.Value.Count == 0)
+                        continue;
+                    var joined = h.Value.Count == 1 ? h.Value.ToString() : string.Join(',', h.Value.ToArray());
+                    headers.Set(h.Key, joined);
+                }
+
                 new Webhook(_options.WebhookSigningSecret).Verify(body, headers);
             }
             catch (Exception ex)

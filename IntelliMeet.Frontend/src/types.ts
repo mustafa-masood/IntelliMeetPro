@@ -45,6 +45,13 @@ export type ApiActionItemRow = {
   addToTodoChecked: boolean;
 };
 
+export type MeetingBotRow = {
+  id: string;
+  externalBotId: string;
+  status: number;
+  transcriptionStatus: number;
+};
+
 export type MeetingDetailsProps = {
   summary: string;
   keyPoints: string[];
@@ -59,5 +66,9 @@ export type MeetingDetailsProps = {
   audioPlaybackUrl?: string | null;
   apiActionItems?: ApiActionItemRow[] | null;
   onConvertActionToTodo?: (actionItemId: string) => Promise<void>;
+  /** Live meeting URL from Meeting BaaS / calendar sync. */
+  meetingUrl?: string | null;
+  meetingPlatform?: string | null;
+  meetingBots?: MeetingBotRow[] | null;
 };
 
