@@ -8,6 +8,9 @@ public interface IMeetingBaasClient
     Task<MeetingBaasResult<CreateBotResponseData>> CreateBotAsync(CreateBotRequest body, CancellationToken ct);
     Task<MeetingBaasResult<CreateBotResponseData>> CreateScheduledBotAsync(ScheduledBotRequest body, CancellationToken ct);
     Task<MeetingBaasResult<BotDetailsData>> GetBotAsync(string botId, CancellationToken ct);
+    Task<MeetingBaasResult<BotsListPageResult>> ListBotsAsync(ListBotsQuery query, CancellationToken ct);
+    Task<MeetingBaasResult<ScheduledBotsListPageResult>> ListScheduledBotsAsync(ListScheduledBotsQuery query, CancellationToken ct);
+    Task<MeetingBaasResult<ScheduledBotDetailsData>> GetScheduledBotDetailsAsync(string scheduledBotId, CancellationToken ct);
     Task<MeetingBaasResult<BotStatusData>> GetBotStatusAsync(string botId, CancellationToken ct);
     Task<MeetingBaasResult<MessageData>> LeaveBotAsync(string botId, CancellationToken ct);
     Task<MeetingBaasResult<DeleteBotDataResponse>> DeleteBotDataAsync(string botId, CancellationToken ct);

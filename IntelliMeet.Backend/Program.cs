@@ -2,10 +2,12 @@ using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Application.Services;
 using IntelliMeet.Backend.Infrastructure.Api;
 using IntelliMeet.Backend.Infrastructure.GoogleAuth;
+using IntelliMeet.Backend.Infrastructure.Groq;
 using IntelliMeet.Backend.Infrastructure.MeetingBaas;
 using IntelliMeet.Backend.Infrastructure.Persistence;
 using IntelliMeet.Backend.Options;
 using IntelliMeet.Backend.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,12 +39,30 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
 builder.Services.Configure<MeetingBaasOptions>(builder.Configuration.GetSection(MeetingBaasOptions.SectionName));
 builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection(GoogleOAuthOptions.SectionName));
+builder.Services.Configure<GroqOptions>(builder.Configuration.GetSection(GroqOptions.SectionName));
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddSingleton<IMeetingBaasArtifactApplier, MeetingBaasArtifactApplier>();
+builder.Services.AddSingleton<IGroqAnalysisBackgroundTrigger, GroqAnalysisBackgroundTrigger>();
 
 builder.Services.AddHttpClient<ITextAnalysisService, OllamaTextAnalysisService>();
 builder.Services.AddHttpClient<ITranscriptionService, WhisperXTranscriptionService>(client =>
 {
     client.Timeout = TimeSpan.FromMinutes(10);
 });
+
+builder.Services.AddHttpClient(nameof(TranscriptTextResolver), client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
+builder.Services.AddSingleton<ITranscriptTextResolver, TranscriptTextResolver>();
+builder.Services.AddHttpClient<IGroqChatService, GroqChatService>();
+builder.Services.AddScoped<IMeetingGroqAnalysisService, MeetingGroqAnalysisService>();
 
 builder.Services.AddHttpClient<IMeetingBaasClient, MeetingBaasClient>();
 builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>();
@@ -92,6 +112,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthorization();

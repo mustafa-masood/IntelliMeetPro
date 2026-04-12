@@ -1,8 +1,32 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
 import TeamCreationSidebar from './TeamCreationSidebar';
 import type { MeetingDetailsProps } from '../types';
+
+const BOT_STATUS: Record<number, string> = {
+    0: 'Unknown',
+    1: 'Queued',
+    2: 'Joining',
+    3: 'Waiting room',
+    4: 'In call',
+    5: 'Recording',
+    6: 'Paused',
+    7: 'Resumed',
+    8: 'Transcribing',
+    9: 'Completed',
+    10: 'Failed',
+    11: 'Scheduled',
+    12: 'Removed',
+};
+
+const TX_STATUS: Record<number, string> = {
+    0: 'None',
+    1: 'Pending',
+    2: 'Processing',
+    3: 'Ready',
+    4: 'Failed',
+};
 
 const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     summary = '',
@@ -17,158 +41,233 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     audioPlaybackUrl = null,
     apiActionItems = null,
     onConvertActionToTodo,
+    meetingUrl = null,
+    meetingPlatform = null,
+    meetingBots = null,
 }) => {
     const [activeTab, setActiveTab] = useState<'summary' | 'transcription'>('summary');
     const [convertingId, setConvertingId] = useState<string | null>(null);
-    
-    // Ensure transcript has required structure
+    const [transcriptQuery, setTranscriptQuery] = useState('');
+
     const safeTranscript = transcript || { fullText: '', segments: [] };
 
+    const rawFullText = (safeTranscript.fullText ?? '').trim();
+    const hasSegmentList = (safeTranscript.segments?.length ?? 0) > 0;
+    const showPlainTranscriptOnly = rawFullText.length > 0 && !hasSegmentList;
+
+    const filteredSegments = useMemo(() => {
+        const segs = safeTranscript.segments || [];
+        const q = transcriptQuery.trim().toLowerCase();
+        if (!q) return segs;
+        return segs.filter(
+            (s) =>
+                s.text.toLowerCase().includes(q) ||
+                (s.speaker && s.speaker.toLowerCase().includes(q))
+        );
+    }, [safeTranscript.segments, transcriptQuery]);
+
+    const plainTranscriptVisible = useMemo(() => {
+        if (!showPlainTranscriptOnly) return '';
+        const q = transcriptQuery.trim().toLowerCase();
+        if (!q) return rawFullText;
+        return rawFullText.toLowerCase().includes(q) ? rawFullText : '';
+    }, [showPlainTranscriptOnly, rawFullText, transcriptQuery]);
+
+    const formatTime = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const getInitials = (speaker: string): string =>
+        speaker
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+
+    const getAvatarColor = (speaker: string): string => {
+        const colors = ['#3c91e6', '#fdeee7', '#16a34a', '#ea580c', '#8B5CF6'];
+        const hash = speaker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return colors[hash % colors.length];
+    };
+
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex min-h-screen w-full bg-bg-surface-lv1 overflow-x-hidden">
             <Sidebar />
 
-            <div className="ml-[270px] mr-[190px] flex-1 flex flex-col h-screen overflow-hidden relative">
-                {/* Topbar */}
-                <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-[100]">
-                    <SearchBar />
+            <div className="ml-0 lg:ml-[270px] mr-0 xl:mr-[190px] flex-1 flex flex-col min-h-screen overflow-hidden relative">
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary px-4 sm:px-8 py-3 flex items-center sticky top-0 z-[100]">
+                    <SearchBar placeholder="Search in workspace…" />
                 </div>
 
-                {/* Breadcrumb */}
-                <div className="px-8 pt-4 flex items-center gap-2">
+                <div className="px-4 sm:px-8 pt-4 flex items-center gap-2 flex-wrap">
                     <button
+                        type="button"
                         onClick={onBack}
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
+                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-text-secondary hover:text-text-primary transition-colors"
+                        aria-label="Back to meetings"
                     >
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M12.5 5L7.5 10L12.5 15" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                            <path
+                                d="M12.5 5L7.5 10L12.5 15"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
                         </svg>
                     </button>
-                    <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">
-                        All Meetings / {meetingTitle}
+                    <span className="font-inter font-medium text-sm text-text-primary">
+                        Meetings <span className="text-text-tertiary">/</span> {meetingTitle}
                     </span>
                 </div>
 
-                {/* Tab Menu */}
-                <div className="px-8 pt-4">
-                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 px-5 py-4 flex gap-5 items-center">
+                {meetingUrl && (
+                    <div className="px-4 sm:px-8 pt-4">
+                        <div className="rounded-16 border border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/30 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-sm">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
+                                    Meeting link · Meeting BaaS
+                                </p>
+                                <p className="font-inter font-medium text-text-primary m-0 truncate text-sm sm:text-base">
+                                    {meetingUrl}
+                                </p>
+                                {meetingPlatform && (
+                                    <span className="inline-block mt-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-bg-surface-lv1 text-text-secondary border border-stroke-primary">
+                                        {meetingPlatform}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 shrink-0">
+                                <a
+                                    href={meetingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 rounded-10 bg-primary-500 text-white text-sm font-inter font-semibold hover:opacity-95 text-center"
+                                >
+                                    Join meeting
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() => void navigator.clipboard.writeText(meetingUrl)}
+                                    className="px-4 py-2 rounded-10 border border-stroke-secondary bg-bg-surface-pure text-sm font-inter font-medium text-text-primary hover:bg-bg-surface-lv1"
+                                >
+                                    Copy link
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {meetingBots && meetingBots.length > 0 && (
+                    <div className="px-4 sm:px-8 pt-3">
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <span className="text-xs font-inter font-medium text-text-secondary">Notetaker bots</span>
+                            {meetingBots.map((b) => (
+                                <div
+                                    key={b.id}
+                                    className="flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-10 border border-stroke-primary bg-bg-surface-pure text-xs font-inter"
+                                >
+                                    <span className="text-text-tertiary truncate max-w-[140px]" title={b.externalBotId}>
+                                        {b.externalBotId.slice(0, 10)}…
+                                    </span>
+                                    <span className="text-primary-500 font-medium">{BOT_STATUS[b.status] ?? `Status ${b.status}`}</span>
+                                    <span className="text-text-tertiary">·</span>
+                                    <span className="text-text-secondary">{TX_STATUS[b.transcriptionStatus] ?? 'Tx'}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="px-4 sm:px-8 pt-4">
+                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 p-1 sm:p-2 flex gap-1 w-fit">
                         <button
+                            type="button"
                             onClick={() => setActiveTab('summary')}
-                            className={`flex gap-1 items-center justify-center relative cursor-pointer ${activeTab === 'summary' ? 'text-text-primary' : 'text-text-secondary'
-                                }`}
+                            className={`px-4 py-2 rounded-10 text-sm font-inter font-medium transition-all ${
+                                activeTab === 'summary'
+                                    ? 'bg-bg-surface-lv1 text-text-primary shadow-sm'
+                                    : 'text-text-secondary hover:text-text-primary'
+                            }`}
                         >
-                            <span className="font-inter font-medium text-sm tracking-[-0.084px]">Summary</span>
-                            {activeTab === 'summary' && (
-                                <div className="absolute bottom-[-14px] left-0 right-0 h-0.5 bg-primary-500"></div>
-                            )}
+                            Summary
                         </button>
                         <button
+                            type="button"
                             onClick={() => setActiveTab('transcription')}
-                            className={`flex gap-1 items-center justify-center relative cursor-pointer ${activeTab === 'transcription' ? 'text-text-primary' : 'text-text-secondary'
-                                }`}
+                            className={`px-4 py-2 rounded-10 text-sm font-inter font-medium transition-all ${
+                                activeTab === 'transcription'
+                                    ? 'bg-bg-surface-lv1 text-text-primary shadow-sm'
+                                    : 'text-text-secondary hover:text-text-primary'
+                            }`}
                         >
-                            <span className="font-inter font-medium text-sm tracking-[-0.084px]">Transcription</span>
-                            {activeTab === 'transcription' && (
-                                <div className="absolute bottom-[-14px] left-0 right-0 h-0.5 bg-primary-500"></div>
-                            )}
+                            Transcription
                         </button>
                     </div>
                 </div>
 
-                {/* Main Content Area */}
-                <div className="flex-1 overflow-hidden px-8 py-4 flex gap-0">
-                    {/* Left Content */}
-                    <div className="flex-1 bg-bg-surface-pure border border-stroke-primary border-r-0 rounded-tl-12 rounded-bl-12 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-hidden px-4 sm:px-8 py-4 flex flex-col xl:flex-row gap-0 min-h-0">
+                    <div className="flex-1 bg-bg-surface-pure border border-stroke-primary xl:border-r-0 rounded-tl-12 rounded-tr-12 xl:rounded-tr-none rounded-bl-12 flex flex-col overflow-hidden min-h-[320px] xl:min-h-0">
                         {activeTab === 'summary' && (
-                            <>
-                                {/* Header */}
-                                <div className="p-5 border-b border-stroke-primary">
-                                    <h1 className="font-inter font-medium text-2xl leading-8 text-text-primary tracking-[-0.36px] mb-2">
-                                        {meetingTitle}
-                                    </h1>
-                                    {meetingDate && (
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm bg-primary-500">
-                                                {meetingTitle.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <span className="font-inter font-normal text-base text-text-secondary tracking-[-0.176px]">
-                                                IntelliMeet {meetingDate} English (Global)
-                                            </span>
+                            <div className="p-5 border-b border-stroke-primary bg-bg-surface-pure">
+                                <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary tracking-tight m-0 mb-2">
+                                    {meetingTitle}
+                                </h1>
+                                {meetingDate && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm bg-primary-500">
+                                            {meetingTitle.substring(0, 2).toUpperCase()}
                                         </div>
-                                    )}
-                                </div>
-                            </>
+                                        <span className="font-inter text-sm text-text-secondary">{meetingDate}</span>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
-                        {/* Filter Buttons */}
-                        {/* <div className="px-5 py-4 border-b border-stroke-primary flex gap-2 items-center"> */}
-                        {/* <div className="flex items-center gap-2">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M3.33333 5H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M3.33333 10H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M3.33333 15H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                                <span className="font-inter font-medium text-sm text-text-secondary tracking-[-0.084px]">General Summary</span>
-                            </div> */}
-                        {/* <div className="ml-auto flex gap-2">
-                                {['All', 'Transcription', 'Meeting summary', 'Integration', 'Analysis'].map((filter) => (
-                                    <button
-                                        key={filter}
-                                        onClick={() => setActiveFilter(filter.toLowerCase())}
-                                        className={`bg-bg-surface-pure border border-stroke-primary rounded-8 px-[10px] py-[6px] font-inter font-medium text-sm tracking-[-0.084px] cursor-pointer ${activeFilter === filter.toLowerCase()
-                                                ? 'bg-bg-surface-lv2 text-text-primary'
-                                                : 'text-text-secondary'
-                                            }`}
-                                    >
-                                        {filter}
-                                    </button>
-                                ))}
-                            </div> */}
-                        {/* <button className="ml-2 cursor-pointer">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="5" r="1.5" fill="#2b3d39" />
-                                    <circle cx="10" cy="10" r="1.5" fill="#2b3d39" />
-                                    <circle cx="10" cy="15" r="1.5" fill="#2b3d39" />
-                                </svg>
-                            </button> */}
-                        {/* </div> */}
-
-                        {/* Content */}
                         <div className="flex-1 overflow-y-auto p-5">
                             {activeTab === 'summary' ? (
-                                <div className="flex flex-col gap-4 max-w-[666px]">
+                                <div className="flex flex-col gap-6 max-w-2xl">
                                     <div>
-                                        <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                            Overview
-                                        </h2>
-                                        <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                            {summary}
+                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Overview</h2>
+                                        <p className="font-inter text-base leading-7 text-text-secondary m-0">
+                                            {summary?.trim()
+                                                ? summary
+                                                : 'No summary yet. It will appear after Groq analysis runs (when transcript text is available), or open a meeting that already has notes in the system.'}
                                         </p>
                                     </div>
 
-                                    {keyPoints.length > 0 && (
-                                        <div>
-                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                                Key Points
-                                            </h2>
-                                            <ul className="list-disc list-inside space-y-1">
+                                    <div>
+                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Key points</h2>
+                                        {keyPoints.length > 0 ? (
+                                            <ul className="list-none space-y-2 m-0 pl-0">
                                                 {keyPoints.map((point, index) => (
-                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                    <li
+                                                        key={index}
+                                                        className="font-inter text-base leading-7 text-text-secondary pl-4 border-l-2 border-primary-500/40"
+                                                    >
                                                         {point}
                                                     </li>
                                                 ))}
                                             </ul>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <p className="font-inter text-sm text-text-secondary m-0">
+                                                No key points yet. They are filled when Groq analysis completes successfully.
+                                            </p>
+                                        )}
+                                    </div>
 
                                     {keyTakeaways.length > 0 && (
                                         <div>
-                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                                Key Takeaways
-                                            </h2>
-                                            <ul className="list-disc list-inside space-y-1">
+                                            <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Takeaways</h2>
+                                            <ul className="list-none space-y-2 m-0 pl-0">
                                                 {keyTakeaways.map((takeaway, index) => (
-                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                    <li
+                                                        key={index}
+                                                        className="font-inter text-base leading-7 text-text-secondary pl-4 border-l-2 border-stroke-secondary"
+                                                    >
                                                         {takeaway}
                                                     </li>
                                                 ))}
@@ -178,20 +277,18 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
 
                                     {meetingIdForApi && onConvertActionToTodo ? (
                                         <div>
-                                            <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                                Action Items
-                                            </h2>
+                                            <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Action items</h2>
                                             {apiActionItems && apiActionItems.length > 0 ? (
-                                                <ul className="space-y-3">
+                                                <ul className="space-y-3 m-0 pl-0 list-none">
                                                     {apiActionItems.map((item) => (
                                                         <li
                                                             key={item.id}
-                                                            className="font-inter text-base leading-6 text-text-secondary tracking-[-0.176px] flex flex-wrap items-start gap-2"
+                                                            className="rounded-12 border border-stroke-primary p-3 bg-bg-surface-lv1/40"
                                                         >
-                                                            <label className="flex items-start gap-2 cursor-pointer">
+                                                            <label className="flex items-start gap-3 cursor-pointer">
                                                                 <input
                                                                     type="checkbox"
-                                                                    className="mt-1"
+                                                                    className="mt-1 w-4 h-4 accent-primary-500"
                                                                     disabled={item.addToTodoChecked || convertingId === item.id}
                                                                     checked={item.addToTodoChecked}
                                                                     onChange={async () => {
@@ -204,13 +301,17 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                                         }
                                                                     }}
                                                                 />
-                                                                <span>
-                                                                    <span className="font-medium text-text-primary">{item.title}</span>
+                                                                <span className="font-inter text-sm leading-6 text-text-secondary">
+                                                                    <span className="font-semibold text-text-primary">{item.title}</span>
                                                                     {item.description ? ` — ${item.description}` : ''}{' '}
-                                                                    {item.owner && `(Owner: ${item.owner})`}{' '}
-                                                                    {item.dueDate && `(Due: ${item.dueDate})`}
+                                                                    {item.owner && (
+                                                                        <span className="text-text-tertiary">({item.owner})</span>
+                                                                    )}{' '}
+                                                                    {item.dueDate && (
+                                                                        <span className="text-text-tertiary">Due {item.dueDate}</span>
+                                                                    )}
                                                                     {item.addToTodoChecked && (
-                                                                        <span className="text-primary-600 text-sm ml-1">· Added to To-Dos</span>
+                                                                        <span className="text-primary-500 text-sm ml-1">· In To-Dos</span>
                                                                     )}
                                                                 </span>
                                                             </label>
@@ -218,19 +319,21 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                     ))}
                                                 </ul>
                                             ) : (
-                                                <p className="font-inter text-sm text-text-secondary">No action items for this meeting yet.</p>
+                                                <p className="font-inter text-sm text-text-secondary m-0">
+                                                    No action items yet. They appear when the pipeline extracts tasks from the transcript.
+                                                </p>
                                             )}
                                         </div>
                                     ) : (
                                         actionItems.length > 0 && (
                                             <div>
-                                                <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
-                                                    Action Items
-                                                </h2>
-                                                <ol className="list-decimal list-inside space-y-1">
+                                                <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Action items</h2>
+                                                <ol className="list-decimal list-inside space-y-2 font-inter text-sm text-text-secondary">
                                                     {actionItems.map((item, index) => (
-                                                        <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                            {item.description} {item.owner && `(Owner: ${item.owner})`} {item.dueDate && `(Due: ${item.dueDate})`}
+                                                        <li key={index}>
+                                                            {item.description}{' '}
+                                                            {item.owner && `(Owner: ${item.owner})`}{' '}
+                                                            {item.dueDate && `(Due: ${item.dueDate})`}
                                                         </li>
                                                     ))}
                                                 </ol>
@@ -239,192 +342,148 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-4 w-full">
-                                    {/* Transcription Header */}
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className="font-inter font-normal text-base text-text-primary tracking-[-0.176px]">
-                                            Transcription
-                                        </h2>
+                                <div className="flex flex-col gap-4 w-full max-w-3xl">
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0">Transcript</h2>
+                                        <span className="text-xs text-text-tertiary font-inter">
+                                            {showPlainTranscriptOnly
+                                                ? 'Plain text'
+                                                : `${filteredSegments.length} segment${filteredSegments.length === 1 ? '' : 's'}`}
+                                        </span>
                                     </div>
 
-                                    {/* Search Bar */}
-                                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 py-2 flex items-center gap-2 w-full">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M14 14L11.1 11.1" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <div className="bg-bg-surface-lv1 border border-stroke-primary rounded-10 px-3 py-2 flex items-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                                            <path
+                                                d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z"
+                                                stroke="#2b3d39"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                            <path
+                                                d="M14 14L11.1 11.1"
+                                                stroke="#2b3d39"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
                                         </svg>
                                         <input
-                                            type="text"
-                                            className="flex-1 border-none outline-none font-inter text-sm text-text-secondary tracking-[0.28px] bg-transparent placeholder:text-text-secondary"
-                                            placeholder="Search Transcript"
+                                            type="search"
+                                            value={transcriptQuery}
+                                            onChange={(e) => setTranscriptQuery(e.target.value)}
+                                            className="flex-1 border-none outline-none font-inter text-sm bg-transparent text-text-primary placeholder:text-text-disable min-w-0"
+                                            placeholder="Filter by speaker or phrase…"
+                                            aria-label="Search transcript"
                                         />
-                                        <div className="border border-stroke-primary rounded-[7px] px-[6px] py-0 font-inter text-sm text-text-secondary tracking-[-0.084px] leading-5">⌘ 1</div>
                                     </div>
 
-                                    {/* Transcript List */}
                                     <div className="flex flex-col gap-4">
-                                        {safeTranscript?.segments && safeTranscript.segments.length > 0 ? (
-                                            safeTranscript.segments.map((segment, index) => {
-                                            const formatTime = (seconds: number): string => {
-                                                const mins = Math.floor(seconds / 60);
-                                                const secs = Math.floor(seconds % 60);
-                                                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                                            };
-
-                                            const getInitials = (speaker: string): string => {
-                                                return speaker
-                                                    .split(' ')
-                                                    .map((n) => n[0])
-                                                    .join('')
-                                                    .toUpperCase()
-                                                    .substring(0, 2);
-                                            };
-
-                                            const getAvatarColor = (speaker: string): string => {
-                                                const colors = ['#3c91e6', '#fdeee7', '#16a34a', '#ea580c', '#8B5CF6'];
-                                                const hash = speaker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                                                return colors[hash % colors.length];
-                                            };
-
-                                            const avatarColor = getAvatarColor(segment.speaker);
-                                            const isPrimary = avatarColor === '#3c91e6' || avatarColor === '#16a34a';
-
-                                            return (
-                                                <div key={index} className="flex flex-col gap-3">
-                                                    <div className="flex gap-2 items-center">
-                                                        <div
-                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-inter font-medium ${
-                                                                isPrimary ? 'bg-primary-500 text-white' : 'bg-[#fdeee7] text-text-primary'
-                                                            }`}
-                                                            style={!isPrimary ? { backgroundColor: avatarColor } : undefined}
-                                                        >
-                                                            {getInitials(segment.speaker)}
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="font-inter font-normal text-sm text-text-primary tracking-[-0.084px]">
-                                                                {segment.speaker}
-                                                            </span>
-                                                            <div className="w-1 h-1 rounded-full bg-stroke-primary"></div>
-                                                            <span className="font-inter font-normal text-sm text-[#3c91e6] tracking-[-0.084px]">
-                                                                {formatTime(segment.start)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] leading-5 ml-8">
-                                                        {segment.text}
-                                                    </p>
-                                                </div>
-                                            );
-                                        })
-                                        ) : (
-                                            <div className="text-text-secondary font-inter text-sm">
-                                                No transcript segments available.
+                                        {showPlainTranscriptOnly && (
+                                            <div className="rounded-12 border border-stroke-primary bg-bg-surface-lv1/50 p-4">
+                                                <p className="text-xs font-inter font-medium text-text-tertiary m-0 mb-2">
+                                                    Diarized segments are not available; showing full transcript text.
+                                                </p>
+                                                {plainTranscriptVisible ? (
+                                                    <pre className="font-inter text-sm text-text-secondary leading-6 whitespace-pre-wrap break-words m-0 max-h-[480px] overflow-y-auto">
+                                                        {plainTranscriptVisible}
+                                                    </pre>
+                                                ) : (
+                                                    <p className="font-inter text-sm text-text-secondary m-0">No lines match your search.</p>
+                                                )}
                                             </div>
                                         )}
+                                        {!showPlainTranscriptOnly && filteredSegments.length > 0 ? (
+                                            filteredSegments.map((segment, index) => {
+                                                const avatarColor = getAvatarColor(segment.speaker);
+                                                const isPrimary = avatarColor === '#3c91e6' || avatarColor === '#16a34a';
+                                                return (
+                                                    <div key={`${segment.start}-${index}`} className="flex flex-col gap-2">
+                                                        <div className="flex gap-2 items-center">
+                                                            <div
+                                                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-inter font-medium shrink-0 ${
+                                                                    isPrimary ? 'bg-primary-500 text-white' : 'text-text-primary'
+                                                                }`}
+                                                                style={!isPrimary ? { backgroundColor: avatarColor } : undefined}
+                                                            >
+                                                                {getInitials(segment.speaker)}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="font-inter font-medium text-sm text-text-primary truncate">
+                                                                    {segment.speaker}
+                                                                </span>
+                                                                <span className="text-xs font-mono text-primary-500 shrink-0">
+                                                                    {formatTime(segment.start)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="font-inter text-sm text-text-secondary leading-6 pl-10 m-0">
+                                                            {segment.text}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : !showPlainTranscriptOnly ? (
+                                            <p className="font-inter text-sm text-text-secondary m-0">
+                                                {safeTranscript.segments?.length
+                                                    ? 'No segments match your search.'
+                                                    : 'Transcript will load when Meeting BaaS provides text, URLs are hydrated by the API, or after processing completes.'}
+                                            </p>
+                                        ) : null}
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Divider */}
-                    <div className="w-[6px] bg-bg-surface-lv2"></div>
+                    <div className="hidden xl:flex w-[6px] bg-bg-surface-lv2 shrink-0" aria-hidden />
 
-                    {/* Right Sidebar - AI Chat */}
-                    <div className="w-[379px] bg-bg-surface-pure border-l border-stroke-primary rounded-tr-12 flex flex-col h-full overflow-hidden">
-                        {/* Chat Header */}
-                        <div className="p-5 border-b border-stroke-primary flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="font-inter font-medium text-base text-text-primary tracking-[-0.176px]">
-                                    IntelliMeet Pro AI Chat
-                                </span>
-                                <div className="flex items-center gap-1">
-                                    <span className="font-inter font-normal text-xs text-text-secondary">GPT-4.0</span>
-                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                        <path d="M3.5 4.375L7 7.875L10.5 4.375" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
+                    <div className="w-full xl:w-[min(380px,36vw)] bg-bg-surface-pure border border-stroke-primary border-t-0 xl:border-t xl:border-l-0 rounded-bl-12 rounded-br-12 xl:rounded-bl-none xl:rounded-tr-12 flex flex-col max-h-[420px] xl:max-h-none xl:h-auto min-h-[280px] overflow-hidden">
+                        <div className="p-4 border-b border-stroke-primary flex items-center justify-between">
+                            <div>
+                                <span className="font-inter font-semibold text-sm text-text-primary block">Ask AI</span>
+                                <span className="font-inter text-xs text-text-tertiary">Context: this meeting</span>
                             </div>
-                            <button className="cursor-pointer">
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                    <path d="M13.5 4.5L4.5 13.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M4.5 4.5L13.5 13.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </button>
                         </div>
-
-                        {/* Chat Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-inter font-medium text-sm">
-                                    P
-                                </div>
-                                <span className="font-inter font-medium text-sm text-text-secondary">You</span>
-                            </div>
-                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] ml-10">
-                                Can you explain the significance of the automatic action item generation feature?
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <p className="font-inter text-sm text-text-secondary leading-6 m-0">
+                                Use this space to draft follow-ups from the summary and transcript. Full chat integration can stream answers
+                                grounded in your Meeting BaaS data (transcript webhooks, structured summaries).
                             </p>
-
-                            <div className="flex items-center gap-2 mt-4">
-                                <div className="w-8 h-8 rounded-full bg-bg-surface-lv2 flex items-center justify-center">
-                                    <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-                                        <span className="text-white text-xs">i</span>
-                                    </div>
-                                </div>
-                                <span className="font-inter font-medium text-base text-text-primary">IntelliMeet Pro AI Chat</span>
-                            </div>
-                            <p className="font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] ml-10">
-                                The automatic action item generation feature in Fireflies is significant for several reasons:
-                            </p>
-                            <ol className="list-decimal list-inside ml-10 space-y-2 text-sm text-text-secondary">
-                                <li>
-                                    <span className="font-medium text-text-primary">Efficiency:</span> This feature streamlines the process of tracking tasks that arise during meetings. Instead of manually noting down action items, Fireflies automatically identifies and generates them, saving time and reducing the likelihood of forgetting important tasks.
-                                </li>
-                                <li>
-                                    <span className="font-medium text-text-primary">Clarity:</span> By providing a clear list of action items associated with each meeting, it ensures that all participants understand their responsibilities. This clarity helps in accountability and follow-through on commitments made during discussions.
-                                </li>
-                                <li>
-                                    <span className="font-medium text-text-primary">Organization:</span> The generated tasks are organized per meeting, allowing users to easily reference what needs to be completed after each session. This organization helps in managing workloads and prioritizing tasks effectively.
-                                </li>
-                            </ol>
                         </div>
-
-                        {/* Chat Input */}
                         <div className="p-4 border-t border-stroke-primary">
-                            <button className="w-full bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 py-2 flex items-center justify-between cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <rect x="2" y="2" width="6" height="6" rx="1" stroke="#2b3d39" strokeWidth="1.5" />
-                                        <rect x="12" y="2" width="6" height="6" rx="1" stroke="#2b3d39" strokeWidth="1.5" />
-                                        <rect x="2" y="12" width="6" height="6" rx="1" stroke="#2b3d39" strokeWidth="1.5" />
-                                        <rect x="12" y="12" width="6" height="6" rx="1" stroke="#2b3d39" strokeWidth="1.5" />
-                                    </svg>
-                                    <span className="font-inter font-medium text-sm text-text-secondary tracking-[-0.084px]">
-                                        Ask IntelliMeet Pro AI Chat anything
-                                    </span>
-                                </div>
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M10 3L17 10L10 17M17 10H3" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <div className="w-full bg-bg-surface-lv1 border border-stroke-primary rounded-10 px-3 py-2.5 flex items-center gap-2">
+                                <span className="font-inter text-sm text-text-disable flex-1">Ask about decisions, risks, or next steps…</span>
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+                                    <path
+                                        d="M10 3L17 10L10 17M17 10H3"
+                                        stroke="#16a34a"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
-                            </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Audio Player */}
-                <div className="bg-bg-surface-pure border border-stroke-primary border-t-0 rounded-bl-12 rounded-br-12 px-8 py-4 flex flex-col gap-2">
-                    {audioPlaybackUrl ? (
-                        <audio className="w-full max-w-xl" controls src={audioPlaybackUrl} />
-                    ) : (
-                        <div className="flex items-center gap-4">
-                            <button type="button" className="w-9 h-9 rounded-full bg-[#6cc58d] flex items-center justify-center cursor-pointer opacity-50" disabled>
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M6.66667 5V15M13.3333 5V15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                            </button>
-                            <span className="font-inter text-sm text-text-secondary">No recording URL yet (join a bot and complete the meeting).</span>
+                <div className="px-4 sm:px-8 pb-6">
+                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-inter font-semibold text-text-tertiary uppercase tracking-wider m-0 mb-1">
+                                Recording playback
+                            </p>
+                            {audioPlaybackUrl ? (
+                                <audio className="w-full max-w-xl" controls src={audioPlaybackUrl} />
+                            ) : (
+                                <p className="font-inter text-sm text-text-secondary m-0">
+                                    No playback URL yet. When the bot completes and Meeting BaaS exposes media, it will show here.
+                                </p>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 
@@ -434,4 +493,3 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
 };
 
 export default MeetingDetails;
-

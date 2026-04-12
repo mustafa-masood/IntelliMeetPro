@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -35,6 +36,53 @@ public sealed class MeetingBaasClient : IMeetingBaasClient
 
     public Task<MeetingBaasResult<BotDetailsData>> GetBotAsync(string botId, CancellationToken ct) =>
         GetAsync<BotDetailsData>($"v2/bots/{Uri.EscapeDataString(botId)}", ct);
+
+    public async Task<MeetingBaasResult<BotsListPageResult>> ListBotsAsync(ListBotsQuery query, CancellationToken ct)
+    {
+        var limit = Math.Clamp(query.Limit, 1, 250);
+        var qs = new List<string> { "limit=" + limit.ToString(CultureInfo.InvariantCulture) };
+        if (!string.IsNullOrEmpty(query.Cursor))
+            qs.Add("cursor=" + Uri.EscapeDataString(query.Cursor));
+        if (!string.IsNullOrWhiteSpace(query.MeetingUrl))
+            qs.Add("meeting_url=" + Uri.EscapeDataString(query.MeetingUrl));
+        if (!string.IsNullOrWhiteSpace(query.BotId))
+            qs.Add("bot_id=" + Uri.EscapeDataString(query.BotId));
+        if (!string.IsNullOrWhiteSpace(query.Status))
+            qs.Add("status=" + Uri.EscapeDataString(query.Status));
+        if (!string.IsNullOrWhiteSpace(query.MeetingPlatform))
+            qs.Add("meeting_platform=" + Uri.EscapeDataString(query.MeetingPlatform));
+        if (!string.IsNullOrWhiteSpace(query.CreatedAfter))
+            qs.Add("created_after=" + Uri.EscapeDataString(query.CreatedAfter));
+        if (!string.IsNullOrWhiteSpace(query.CreatedBefore))
+            qs.Add("created_before=" + Uri.EscapeDataString(query.CreatedBefore));
+        var path = "v2/bots?" + string.Join('&', qs);
+        return await ParseBotsListPageAsync(path, ct).ConfigureAwait(false);
+    }
+
+    public async Task<MeetingBaasResult<ScheduledBotsListPageResult>> ListScheduledBotsAsync(ListScheduledBotsQuery query, CancellationToken ct)
+    {
+        var limit = Math.Clamp(query.Limit, 1, 100);
+        var qs = new List<string> { "limit=" + limit.ToString(CultureInfo.InvariantCulture) };
+        if (!string.IsNullOrEmpty(query.Cursor))
+            qs.Add("cursor=" + Uri.EscapeDataString(query.Cursor));
+        if (!string.IsNullOrWhiteSpace(query.MeetingUrl))
+            qs.Add("meeting_url=" + Uri.EscapeDataString(query.MeetingUrl));
+        if (!string.IsNullOrWhiteSpace(query.BotId))
+            qs.Add("bot_id=" + Uri.EscapeDataString(query.BotId));
+        if (!string.IsNullOrWhiteSpace(query.Status))
+            qs.Add("status=" + Uri.EscapeDataString(query.Status));
+        if (!string.IsNullOrWhiteSpace(query.MeetingPlatform))
+            qs.Add("meeting_platform=" + Uri.EscapeDataString(query.MeetingPlatform));
+        if (!string.IsNullOrWhiteSpace(query.ScheduledAfter))
+            qs.Add("scheduled_after=" + Uri.EscapeDataString(query.ScheduledAfter));
+        if (!string.IsNullOrWhiteSpace(query.ScheduledBefore))
+            qs.Add("scheduled_before=" + Uri.EscapeDataString(query.ScheduledBefore));
+        var path = "v2/bots/scheduled?" + string.Join('&', qs);
+        return await ParseScheduledBotsListPageAsync(path, ct).ConfigureAwait(false);
+    }
+
+    public Task<MeetingBaasResult<ScheduledBotDetailsData>> GetScheduledBotDetailsAsync(string scheduledBotId, CancellationToken ct) =>
+        GetAsync<ScheduledBotDetailsData>($"v2/bots/scheduled/{Uri.EscapeDataString(scheduledBotId)}", ct);
 
     public Task<MeetingBaasResult<BotStatusData>> GetBotStatusAsync(string botId, CancellationToken ct) =>
         GetAsync<BotStatusData>($"v2/bots/{Uri.EscapeDataString(botId)}/status", ct);
@@ -209,6 +257,76 @@ public sealed class MeetingBaasClient : IMeetingBaasClient
         {
             _logger.LogError(ex, "Meeting BaaS JSON parse failed");
             return new MeetingBaasResult<TData>(false, null, (int)resp.StatusCode, ex.Message, body);
+        }
+    }
+
+    private async Task<MeetingBaasResult<BotsListPageResult>> ParseBotsListPageAsync(string relative, CancellationToken ct)
+    {
+        using var resp = await _http.GetAsync(relative, ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!resp.IsSuccessStatusCode)
+            return new MeetingBaasResult<BotsListPageResult>(false, null, (int)resp.StatusCode, body, body);
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("success", out var ok) && ok.ValueKind == JsonValueKind.False)
+            {
+                var err = root.TryGetProperty("error", out var e) ? e.GetString() : body;
+                return new MeetingBaasResult<BotsListPageResult>(false, null, (int)resp.StatusCode, err, body);
+            }
+
+            List<BotListItemData> items = new();
+            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                items = JsonSerializer.Deserialize<List<BotListItemData>>(data.GetRawText(), MeetingBaasJson.Options) ?? new();
+            string? cursor = null;
+            if (root.TryGetProperty("cursor", out var c) && c.ValueKind == JsonValueKind.String)
+                cursor = c.GetString();
+            string? prev = null;
+            if (root.TryGetProperty("prev_cursor", out var p) && p.ValueKind == JsonValueKind.String)
+                prev = p.GetString();
+            var page = new BotsListPageResult { Items = items, NextCursor = cursor, PrevCursor = prev };
+            return new MeetingBaasResult<BotsListPageResult>(true, page, (int)resp.StatusCode, null, body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "list bots parse failed");
+            return new MeetingBaasResult<BotsListPageResult>(false, null, (int)resp.StatusCode, ex.Message, body);
+        }
+    }
+
+    private async Task<MeetingBaasResult<ScheduledBotsListPageResult>> ParseScheduledBotsListPageAsync(string relative, CancellationToken ct)
+    {
+        using var resp = await _http.GetAsync(relative, ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!resp.IsSuccessStatusCode)
+            return new MeetingBaasResult<ScheduledBotsListPageResult>(false, null, (int)resp.StatusCode, body, body);
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("success", out var ok) && ok.ValueKind == JsonValueKind.False)
+            {
+                var err = root.TryGetProperty("error", out var e) ? e.GetString() : body;
+                return new MeetingBaasResult<ScheduledBotsListPageResult>(false, null, (int)resp.StatusCode, err, body);
+            }
+
+            List<ScheduledBotListItemData> items = new();
+            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                items = JsonSerializer.Deserialize<List<ScheduledBotListItemData>>(data.GetRawText(), MeetingBaasJson.Options) ?? new();
+            string? cursor = null;
+            if (root.TryGetProperty("cursor", out var c) && c.ValueKind == JsonValueKind.String)
+                cursor = c.GetString();
+            string? prev = null;
+            if (root.TryGetProperty("prev_cursor", out var p) && p.ValueKind == JsonValueKind.String)
+                prev = p.GetString();
+            var page = new ScheduledBotsListPageResult { Items = items, NextCursor = cursor, PrevCursor = prev };
+            return new MeetingBaasResult<ScheduledBotsListPageResult>(true, page, (int)resp.StatusCode, null, body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "list scheduled bots parse failed");
+            return new MeetingBaasResult<ScheduledBotsListPageResult>(false, null, (int)resp.StatusCode, ex.Message, body);
         }
     }
 
