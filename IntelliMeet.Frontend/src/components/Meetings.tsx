@@ -397,11 +397,8 @@ const Meetings: React.FC = () => {
                                         <div className="flex bg-bg-surface-lv2 border-b border-stroke-primary">
                                             <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary w-[517px] rounded-tl-12">
                                                 <div className="flex items-center gap-[2px]">
-                                                    <span>File</span>
-                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                        <path d="M8 4V12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                                        <path d="M4 8H12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                                    </svg>
+                                                    <span>File Name</span>
+                                                   
                                                 </div>
                                             </div>
                                             <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary flex-1">
