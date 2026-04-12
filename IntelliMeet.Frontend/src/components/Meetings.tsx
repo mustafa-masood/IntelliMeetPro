@@ -209,6 +209,19 @@ const Meetings: React.FC = () => {
 
     const handleMeetingClick = (meeting: Meeting) => {
         setSelectedMeeting(meeting);
+        // Create a basic analysis result for regular meetings
+        setSelectedAnalysisResult({
+            analysis: {
+                summary: `Meeting: ${meeting.name}`,
+                keyPoints: [],
+                actionItems: [],
+                keyTakeaways: [],
+            },
+            transcript: {
+                fullText: '',
+                segments: [],
+            },
+        });
     };
 
     const handleAnalyzedMeetingClick = (meeting: MeetingType & { analysisResult?: MeetingAnalysisResponse }) => {
