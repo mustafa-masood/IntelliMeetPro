@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import TeamCreationSidebar from './TeamCreationSidebar';
 import MeetingDetails from './MeetingDetails';
 import MobileMenuButton from './MobileMenuButton';
 import MeetingsTable from './MeetingsTable';
-import PageHeader from './layout/PageHeader';
 import Container from './layout/Container';
+import SearchBar from './SearchBar';
 import type { MeetingAnalysisResponse, Meeting as MeetingType } from '../types';
 
 interface Meeting {
@@ -26,7 +25,7 @@ const Meetings: React.FC = () => {
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [showUploadFilesView, setShowUploadFilesView] = useState(false);
-    const [showAllMeetings, setShowAllMeetings] = useState(false);
+    const [showAllMeetings, setShowAllMeetings] = useState(true);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -62,21 +61,19 @@ const Meetings: React.FC = () => {
 
     // Mock meetings data
     const meetings: Meeting[] = [
-        { id: '1', name: 'Design Explanations', initials: 'DE', avatarColor: '#3B82F6', duration: '1hours 30min', creator: 'Thomas L. Fletcher', status: 'coming-soon', date: '02 Jan 2025, 08:43 AM' },
-        { id: '2', name: 'Project Discussions', initials: 'PD', avatarColor: '#8B5CF6', duration: '1hours', creator: 'Andre Tie', status: 'coming-soon', date: '03 Jan 2025, 10:15 AM' },
-        { id: '3', name: 'Vision & Goals Workshop', initials: 'PO', avatarColor: '#EC4899', duration: '30min', creator: 'Cristian Robarts', status: 'coming-soon', date: '04 Jan 2025, 02:00 PM' },
-        { id: '4', name: 'Weekly Alignment Huddle', initials: 'EF', avatarColor: '#10B981', duration: '2hours', creator: 'Allies Holland', status: 'coming-soon', date: '05 Jan 2025, 09:30 AM' },
-        { id: '5', name: 'Innovation Roundtable', initials: 'IR', avatarColor: '#F59E0B', duration: '1.30 Hours', creator: 'Jhon Smith', status: 'coming-soon', date: '06 Jan 2025, 11:00 AM' },
-        { id: '6', name: 'Operational Excellence Review', initials: 'OE', avatarColor: '#EF4444', duration: '1hours', creator: 'Thomas L. Fletcher', status: 'completed', date: '22 Dec 2024, 02:33 PM' },
-        { id: '7', name: 'Customer Success Insights', initials: 'CS', avatarColor: '#06B6D4', duration: '45min', creator: 'Andre Tie', status: 'completed', date: '21 Dec 2024, 03:15 PM' },
-        { id: '8', name: 'Work Overview', initials: 'WO', avatarColor: '#84CC16', duration: '1hours', creator: 'Cristian Robarts', status: 'completed', date: '20 Dec 2024, 10:00 AM' },
-        { id: '9', name: 'Team Retrospective', initials: 'TR', avatarColor: '#F97316', duration: '1hours 30min', creator: 'Allies Holland', status: 'completed', date: '19 Dec 2024, 04:45 PM' },
-        { id: '10', name: 'Growth Acceleration Forum', initials: 'WD', avatarColor: '#6366F1', duration: '2hours', creator: 'Jhon Smith', status: 'completed', date: '18 Dec 2024, 01:30 PM' },
-        { id: '11', name: 'Problem-Solving Lab', initials: 'PS', avatarColor: '#14B8A6', duration: '1hours', creator: 'Thomas L. Fletcher', status: 'completed', date: '17 Dec 2024, 09:00 AM' },
-        { id: '12', name: 'Quarterly Roadmap Update', initials: 'QR', avatarColor: '#A855F7', duration: '1hours 15min', creator: 'Andre Tie', status: 'completed', date: '16 Dec 2024, 11:20 AM' },
-        { id: '13', name: 'Key Metrics Review', initials: 'KM', avatarColor: '#EC4899', duration: '30min', creator: 'Cristian Robarts', status: 'completed', date: '15 Dec 2024, 02:00 PM' },
-        { id: '14', name: 'Strategic Planning Session', initials: 'SP', avatarColor: '#10B981', duration: '2hours', creator: 'Allies Holland', status: 'completed', date: '14 Dec 2024, 10:30 AM' },
-        { id: '15', name: 'Product Launch Discussion', initials: 'PL', avatarColor: '#F59E0B', duration: '1hours 45min', creator: 'Jhon Smith', status: 'completed', date: '13 Dec 2024, 03:00 PM' },
+        { id: '1', name: 'Design Explanations', initials: 'DE', avatarColor: '#3B82F6', duration: '90 min', creator: 'Thomas L. Fletcher', status: 'coming-soon', date: '02 Jan 2025, 08:43 AM' },
+        { id: '2', name: 'Project Discussions', initials: 'PD', avatarColor: '#8B5CF6', duration: '60 min', creator: 'Andre Tie', status: 'coming-soon', date: '03 Jan 2025, 10:15 AM' },
+        { id: '3', name: 'Vision & Goals Workshop', initials: 'PO', avatarColor: '#EC4899', duration: '30 min', creator: 'Cristian Robarts', status: 'coming-soon', date: '04 Jan 2025, 02:00 PM' },
+        { id: '4', name: 'Weekly Alignment Huddle', initials: 'EF', avatarColor: '#10B981', duration: '120 min', creator: 'Allies Holland', status: 'coming-soon', date: '05 Jan 2025, 09:30 AM' },
+        { id: '5', name: 'Innovation Roundtable', initials: 'IR', avatarColor: '#F59E0B', duration: '75 min', creator: 'Jhon Smith', status: 'coming-soon', date: '06 Jan 2025, 11:00 AM' },
+        { id: '6', name: 'Operational Excellence Review', initials: 'OE', avatarColor: '#EF4444', duration: '90 min', creator: 'Thomas L. Fletcher', status: 'completed', date: '22 Dec 2024, 02:33 PM' },
+        { id: '7', name: 'Customer Success Insights', initials: 'CS', avatarColor: '#06B6D4', duration: '45 min', creator: 'Andre Tie', status: 'completed', date: '21 Dec 2024, 03:15 PM' },
+        { id: '8', name: 'Weekly Alignment Huddle', initials: 'EF', avatarColor: '#10B981', duration: '90 min', creator: 'Allies Holland', status: 'coming-soon', date: '05 Jan 2025, 09:30 AM' },
+        { id: '9', name: 'Innovation Roundtable', initials: 'IR', avatarColor: '#F59E0B', duration: '130 min', creator: 'Jhon Smith', status: 'coming-soon', date: '06 Jan 2025, 11:00 AM' },
+        { id: '10', name: 'Operational Excellence Review', initials: 'OE', avatarColor: '#EF4444', duration: '120 min', creator: 'Thomas L. Fletcher', status: 'completed', date: '22 Dec 2024, 02:33 PM' },
+        { id: '11', name: 'Customer Success Insights', initials: 'CS', avatarColor: '#06B6D4', duration: '45 min', creator: 'Andre Tie', status: 'completed', date: '21 Dec 2024, 03:15 PM' },
+
+
     ];
 
     useEffect(() => {
@@ -251,7 +248,7 @@ const Meetings: React.FC = () => {
                 </div>
             );
         }
-        
+
         return (
             <MeetingDetails
                 summary={selectedAnalysisResult.analysis.summary || ''}
@@ -269,46 +266,29 @@ const Meetings: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
-        <div className="flex min-h-screen bg-bg-surface-lv1">
-            <MobileMenuButton 
-                isOpen={isMobileMenuOpen} 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+        <div className=" flex min-h-screen bg-bg-surface-lv1">
+            <MobileMenuButton
+                isOpen={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
-            
-            <Sidebar 
+
+            <Sidebar
                 isMobileOpen={isMobileMenuOpen}
                 onMobileClose={() => setIsMobileMenuOpen(false)}
             />
 
-            <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] xl:mr-[190px] transition-all duration-300">
-                <PageHeader 
-                    title={showUploadFilesView ? 'My Meetings' : showAllMeetings ? 'My Meeting' : 'My Meetings'}
-                    showSearch={true}
-                    actions={
-                        showAllMeetings && (
-                            <button className="bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 py-2 flex items-center gap-2 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] hover:bg-bg-surface-lv1 transition-colors">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                    <path d="M6.66667 2.5V5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M13.3333 2.5V5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M3.33333 8.33333H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M4.16667 4.16667H15.8333C16.7538 4.16667 17.5 4.91286 17.5 5.83333V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16667C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5.83333C2.5 4.91286 3.24619 4.16667 4.16667 4.16667Z" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                                <span>All</span>
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </button>
-                        )
-                    }
-                />
+            <main className=" flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">
+                <div className="bg-bg-surface-pure border-b border-stroke-primary h-16 flex items-center px-7 sm:px-7">
+                    <SearchBar placeholder="Search meetings..." className="sm:w-64" />
+                </div>
 
-                <div className="flex-1 overflow-y-auto">
-                    <Container className="py-4 sm:py-6 lg:py-8">
+                <div className=" flex-1 overflow-y-auto">
+                    <Container className="py-2 sm:py-2 lg:py-2">
                         <div className="flex flex-col gap-4 sm:gap-6">
-                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full">
+                            <div className="   flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
                                 <div className="flex-1 w-full sm:w-auto">
                                     <h1 className="font-inter-tight font-medium text-xl sm:text-2xl leading-8 text-text-primary m-0">
-                                        {showUploadFilesView ? 'My Meetings' : showAllMeetings ? 'My Meeting' : 'My Meetings'}
+                                        My Meetings
                                     </h1>
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center w-full sm:w-auto relative">
@@ -336,10 +316,10 @@ const Meetings: React.FC = () => {
                                                 className="bg-bg-surface-lv2 flex gap-[6px] items-center overflow-hidden p-2 relative rounded-8 shrink-0 w-full sm:w-[238px] cursor-pointer hover:bg-bg-surface-lv1 transition-colors text-left border-none"
                                                 role="menuitem"
                                             >
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0">
-                                            <path d="M10 2.5C8.75 2.5 7.75 3.5 7.75 4.75V6.5C6.5 7 5.5 8.25 5.5 9.75V13.5L4 15.5V16.5H16V15.5L14.5 13.5V9.75C14.5 8.25 13.5 7 12.25 6.5V4.75C12.25 3.5 11.25 2.5 10 2.5Z" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M7.5 10.5H12.5" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0">
+                                                    <path d="M10 2.5C8.75 2.5 7.75 3.5 7.75 4.75V6.5C6.5 7 5.5 8.25 5.5 9.75V13.5L4 15.5V16.5H16V15.5L14.5 13.5V9.75C14.5 8.25 13.5 7 12.25 6.5V4.75C12.25 3.5 11.25 2.5 10 2.5Z" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M7.5 10.5H12.5" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" />
+                                                </svg>
                                                 <span className="flex-1 font-inter font-medium text-sm leading-5 text-text-primary tracking-[-0.084px]">
                                                     Add to live meeting
                                                 </span>
@@ -378,193 +358,110 @@ const Meetings: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+                                <button
+                                    onClick={() => {
+                                        setShowUploadFilesView(!showUploadFilesView);
+                                        setShowAllMeetings(!showAllMeetings);
+                                    }}
+                                    className={`rounded-8 px-3 sm:px-4 py-2 flex items-center justify-center gap-2 cursor-pointer font-inter font-medium text-sm tracking-[-0.084px] leading-5 transition-colors w-full sm:w-auto ${showUploadFilesView
+                                            ? 'bg-primary-500 text-white hover:opacity-90'
+                                            : 'bg-bg-surface-pure border border-stroke-primary text-text-secondary hover:bg-bg-surface-lv1'
+                                        }`}
+                                    aria-label="Toggle uploaded files"
+                                >
+
+                                    <span>Show Uploaded Files</span>
+                                </button>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center w-full flex-wrap">
-                                <button 
-                                    onClick={handleAddToLiveMeeting}
-                                    className="bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 sm:px-4 py-2 flex items-center justify-center gap-2 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.07px] leading-5 shadow-[0px_1px_2px_0px_rgba(6,27,22,0.04)] hover:bg-bg-surface-lv1 transition-colors flex-1 sm:flex-none"
-                                    aria-label="Add to live meeting"
-                                >
-                                    <span className="hidden sm:inline">Add to live meeting</span>
-                                    <span className="sm:hidden">Add to live</span>
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                        <path d="M10 5V15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                        <path d="M5 10H15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                </button>
-                                <button 
-                                    onClick={handleScheduleNewMeeting}
-                                    className="bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 sm:px-[10px] py-2 flex items-center justify-center gap-2 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.07px] leading-5 shadow-[0px_1px_2px_0px_rgba(6,27,22,0.04)] hover:bg-bg-surface-lv1 transition-colors flex-1 sm:flex-none"
-                                    aria-label="Schedule meeting"
-                                >
-                                    <span>Schedule</span>
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                        <path d="M6.66667 2.5V5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M13.3333 2.5V5.83333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M3.33333 8.33333H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M4.16667 4.16667H15.8333C16.7538 4.16667 17.5 4.91286 17.5 5.83333V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16667C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5.83333C2.5 4.91286 3.24619 4.16667 4.16667 4.16667Z" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                                <button 
-                                    onClick={handleUploadAudioRecording}
-                                    className="bg-bg-surface-pure border border-stroke-primary rounded-8 px-3 sm:px-[10px] py-2 flex items-center justify-center gap-2 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 shadow-[0px_1px_2px_0px_rgba(6,27,22,0.04)] hover:bg-bg-surface-lv1 transition-colors flex-1 sm:flex-none"
-                                    aria-label="Upload audio recording"
-                                >
-                                    <span>Upload</span>
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                        <path d="M10 13.3333V3.33333" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M6.66667 6.66667L10 3.33333L13.3333 6.66667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M3.33333 13.3333H16.6667" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                            </div>
+
                         </div>
 
                         <div className="flex flex-col gap-4 relative min-h-[400px]">
-                    {showUploadFilesView ? (
-                        <div className="bg-bg-surface-pure rounded-12 shadow-card flex flex-col overflow-hidden relative z-0 min-h-[400px] overflow-y-auto">
-                            <div className="flex flex-col">
-                                <div className="flex bg-bg-surface-lv2 border-b border-stroke-primary">
-                                    <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary w-[517px] rounded-tl-12">
-                                        <div className="flex items-center gap-[2px]">
-                                            <span>File</span>
-                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                <path d="M8 4V12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                                <path d="M4 8H12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary flex-1">
-                                        <span>Time</span>
-                                    </div>
-                                    <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary flex-1">
-                                        <span>Status</span>
-                                    </div>
-                                    <div className="px-3 h-10 flex items-center justify-center w-9 rounded-tr-12"></div>
-                                </div>
-                                {uploadedFiles.map((file) => (
-                                    <div key={file.id} className="flex border-b border-stroke-primary last:border-b-0">
-                                        <div className="px-3 h-12 flex items-center gap-3 w-[517px]">
-                                            <div className={`overflow-clip relative rounded-full shrink-0 w-6 h-6 flex items-center justify-center ${file.badgeColor === 'primary' ? 'bg-primary-50' : 'bg-orange-50'}`}>
-                                                <p className={`font-inter font-bold text-[9px] leading-normal text-center tracking-[0.4px] m-0 ${file.badgeColor === 'primary' ? 'text-primary-500' : 'text-orange-500'}`}>
-                                                    MP4
-                                                </p>
-                                            </div>
-                                            <div className="flex flex-1 flex-col items-start justify-center shrink-0">
-                                                <p className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden text-text-primary tracking-[-0.176px] m-0">
-                                                    {file.name}.<span className="text-[#c1c6c5]">{file.extension}</span>
-                                                </p>
-                                                <p className="font-inter font-normal text-xs leading-4 text-text-secondary m-0">
-                                                    {file.size}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="px-3 h-12 flex items-center font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] flex-1">
-                                            {file.time}
-                                        </div>
-                                        <div className="px-3 h-12 flex items-center flex-1">
-                                            <div className="bg-[#ffefd4] flex gap-0 items-center justify-center p-1 rounded-8 shrink-0">
-                                                <div className="relative shrink-0 w-4 h-4">
+                            {showUploadFilesView ? (
+                                <div className="bg-bg-surface-pure rounded-12 shadow-card flex flex-col overflow-hidden relative z-0 min-h-[400px] overflow-y-auto">
+                                    <div className="flex flex-col">
+                                        <div className="flex bg-bg-surface-lv2 border-b border-stroke-primary">
+                                            <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary w-[517px] rounded-tl-12">
+                                                <div className="flex items-center gap-[2px]">
+                                                    <span>File</span>
                                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                        <circle cx="8" cy="8" r="7" stroke="#735522" strokeWidth="1.5" />
-                                                        <path d="M8 5V8M8 11H8.01" stroke="#735522" strokeWidth="1.5" strokeLinecap="round" />
+                                                        <path d="M8 4V12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
+                                                        <path d="M4 8H12" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" />
                                                     </svg>
                                                 </div>
-                                                <div className="flex gap-0 items-center justify-center px-1 py-0 relative shrink-0">
-                                                    <p className="font-inter font-normal text-xs leading-4 text-[#735522] text-center m-0">
-                                                        Progressing transcript
-                                                    </p>
+                                            </div>
+                                            <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary flex-1">
+                                                <span>Time</span>
+                                            </div>
+                                            <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary flex-1">
+                                                <span>Status</span>
+                                            </div>
+                                            <div className="px-3 h-10 flex items-center justify-center w-9 rounded-tr-12"></div>
+                                        </div>
+                                        {uploadedFiles.map((file) => (
+                                            <div key={file.id} className="flex border-b border-stroke-primary last:border-b-0">
+                                                <div className="px-3 h-12 flex items-center gap-3 w-[517px]">
+                                                    <div className={`overflow-clip relative rounded-full shrink-0 w-6 h-6 flex items-center justify-center ${file.badgeColor === 'primary' ? 'bg-primary-50' : 'bg-orange-50'}`}>
+                                                        <p className={`font-inter font-bold text-[9px] leading-normal text-center tracking-[0.4px] m-0 ${file.badgeColor === 'primary' ? 'text-primary-500' : 'text-orange-500'}`}>
+                                                            MP4
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex flex-1 flex-col items-start justify-center shrink-0">
+                                                        <p className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden text-text-primary tracking-[-0.176px] m-0">
+                                                            {file.name}.<span className="text-[#c1c6c5]">{file.extension}</span>
+                                                        </p>
+                                                        <p className="font-inter font-normal text-xs leading-4 text-text-secondary m-0">
+                                                            {file.size}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 h-12 flex items-center font-inter font-normal text-sm text-text-secondary tracking-[-0.084px] flex-1">
+                                                    {file.time}
+                                                </div>
+                                                <div className="px-3 h-12 flex items-center flex-1">
+                                                    <div className="bg-[#ffefd4] flex gap-0 items-center justify-center p-1 rounded-8 shrink-0">
+                                                        <div className="relative shrink-0 w-4 h-4">
+                                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                                <circle cx="8" cy="8" r="7" stroke="#735522" strokeWidth="1.5" />
+                                                                <path d="M8 5V8M8 11H8.01" stroke="#735522" strokeWidth="1.5" strokeLinecap="round" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex gap-0 items-center justify-center px-1 py-0 relative shrink-0">
+                                                            <p className="font-inter font-normal text-xs leading-4 text-[#735522] text-center m-0">
+                                                                Progressing transcript
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 h-12 flex items-center justify-center w-9">
+                                                    <button className="cursor-pointer p-1 hover:bg-bg-surface-lv1 rounded-full transition-colors bg-transparent border-none">
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                            <circle cx="8" cy="3" r="1.5" fill="#2b3d39" />
+                                                            <circle cx="8" cy="8" r="1.5" fill="#2b3d39" />
+                                                            <circle cx="8" cy="13" r="1.5" fill="#2b3d39" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="px-3 h-12 flex items-center justify-center w-9">
-                                            <button className="cursor-pointer p-1 hover:bg-bg-surface-lv1 rounded-full transition-colors bg-transparent border-none">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                    <circle cx="8" cy="3" r="1.5" fill="#2b3d39" />
-                                                    <circle cx="8" cy="8" r="1.5" fill="#2b3d39" />
-                                                    <circle cx="8" cy="13" r="1.5" fill="#2b3d39" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
 
-                            <div className="p-3 flex items-center justify-center rounded-10">
-                                <div className="flex items-center justify-between w-full">
-                                    <div className="font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5">
-                                        Showing 1-20 of 260 entries
-                                    </div>
-                                    <div className="flex gap-2 items-center">
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 px-[10px] py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">
-                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                                <path d="M12.5 5L7.5 10L12.5 15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            <span>Previous</span>
-                                        </button>
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 px-[8px] pr-[9px] py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">1</button>
-                                        <button className="bg-primary-500 text-white border border-primary-500 rounded-8 px-[8px] pr-[9px] py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm tracking-[-0.084px] leading-5 min-w-[32px] justify-center">2</button>
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 px-2 py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">...</button>
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 px-1 py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">16</button>
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 pl-[5px] pr-1 py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">17</button>
-                                        <button className="bg-bg-surface-pure border border-stroke-secondary rounded-8 px-[10px] py-[6px] flex items-center gap-1 cursor-pointer font-inter font-medium text-sm text-text-secondary tracking-[-0.084px] leading-5 min-w-[32px] justify-center">
-                                            <span>Next</span>
-                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                                <path d="M7.5 5L12.5 10L7.5 15" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : !showAllMeetings && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4 text-center w-[412px] pointer-events-none z-[1] mt-[100px]">
-                            <div className="relative w-[166px] h-[135px]">
-                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[119px] h-[119px] bg-bg-surface-lv1 rounded-full" />
-                                <div className="absolute left-1/2 top-[26px] -translate-x-1/2 w-[145px] h-[72px] bg-bg-surface-pure border-[0.469px] border-stroke-primary rounded-[5.625px] shadow-[0px_0.938px_1.875px_0px_rgba(24,35,34,0.05)]" />
-                                <div className="absolute left-1/2 top-[37px] -translate-x-1/2 w-[166px] h-[50px] bg-bg-surface-pure border-[0.469px] border-stroke-primary rounded-[7.5px] shadow-[0px_11.25px_15px_-3.75px_rgba(24,35,34,0.08),0px_3.75px_5.625px_-1.875px_rgba(24,35,34,0.03)]" />
-                                <div className="absolute left-[51px] top-[49px] w-[106px] flex flex-col gap-2">
-                                    <div className="w-[94px] h-1 bg-[#dadddc] rounded-[5.625px]" />
-                                    <div className="flex flex-col gap-2">
-                                        <div className="w-[106px] h-1 bg-bg-surface-lv2 rounded-[5.625px]" />
-                                        <div className="w-[81px] h-1 bg-bg-surface-lv2 rounded-[5.625px]" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-0 w-[373px]">
-                                <h2 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0 mb-4">Transcribe your first meeting</h2>
-                                <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px] m-0">
-                                    Schedule your calendar event by inviting Fireflies, transcribing a live meeting or uploading media.
-                                </p>
-                            </div>
-                        </div>
-                    )}
 
-                            {!showAllMeetings && !showUploadFilesView && (
-                                <div className="flex flex-col items-center gap-4 text-center py-12 sm:py-16 px-4">
-                                    <div className="relative w-[166px] h-[135px]">
-                                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[119px] h-[119px] bg-bg-surface-lv1 rounded-full" />
-                                        <div className="absolute left-1/2 top-[26px] -translate-x-1/2 w-[145px] h-[72px] bg-bg-surface-pure border-[0.469px] border-stroke-primary rounded-[5.625px] shadow-[0px_0.938px_1.875px_0px_rgba(24,35,34,0.05)]" />
-                                        <div className="absolute left-1/2 top-[37px] -translate-x-1/2 w-[166px] h-[50px] bg-bg-surface-pure border-[0.469px] border-stroke-primary rounded-[7.5px] shadow-[0px_11.25px_15px_-3.75px_rgba(24,35,34,0.08),0px_3.75px_5.625px_-1.875px_rgba(24,35,34,0.03)]" />
-                                        <div className="absolute left-[51px] top-[49px] w-[106px] flex flex-col gap-2">
-                                            <div className="w-[94px] h-1 bg-[#dadddc] rounded-[5.625px]" />
-                                            <div className="flex flex-col gap-2">
-                                                <div className="w-[106px] h-1 bg-bg-surface-lv2 rounded-[5.625px]" />
-                                                <div className="w-[81px] h-1 bg-bg-surface-lv2 rounded-[5.625px]" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-0 max-w-[373px]">
-                                        <h2 className="font-inter-tight font-medium text-xl sm:text-2xl leading-8 text-text-primary m-0 mb-4">
-                                            Transcribe your first meeting
-                                        </h2>
-                                        <p className="font-inter font-normal text-sm sm:text-base leading-6 text-text-secondary tracking-[-0.176px] m-0">
-                                            Schedule your calendar event by inviting Fireflies, transcribing a live meeting or uploading media.
+                                </div>
+                            ) : !showAllMeetings && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4 text-center w-[412px] pointer-events-none z-[1] mt-[100px]">
+
+                                    <div className="flex flex-col gap-0 w-[373px]">
+                                        <h2 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary m-0 mb-4">Transcribe your first meeting</h2>
+                                        <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px] m-0">
+                                            Schedule your calendar event by inviting IntelliMeet Pro, transcribing a live meeting or uploading media.
                                         </p>
                                     </div>
                                 </div>
                             )}
+
+
 
                             {showAllMeetings && (
                                 <MeetingsTable
@@ -583,11 +480,6 @@ const Meetings: React.FC = () => {
                     </Container>
                 </div>
             </main>
-
-            <TeamCreationSidebar onAllMeetingsClick={() => {
-                setShowAllMeetings(true);
-                setShowUploadFilesView(false);
-            }} />
 
             {/* Add to Live Meeting Modal */}
             {isModalOpen && (
@@ -664,25 +556,7 @@ const Meetings: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-1 items-start relative shrink-0 w-full">
-                            <div className="flex gap-[2px] items-center relative shrink-0">
-                                <p className="font-inter font-medium text-base leading-6 text-text-primary tracking-[-0.176px] m-0">
-                                    Meeting Language
-                                </p>
-                            </div>
-                            <div className="bg-bg-surface-pure border border-stroke-primary flex items-center justify-between px-3 py-2 relative rounded-8 shrink-0 w-full">
-                                <div className="flex flex-1 gap-2 items-center p-0 relative shrink-0">
-                                    <p className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden relative shrink-0 text-text-secondary tracking-[-0.176px] m-0">
-                                        English USA
-                                    </p>
-                                </div>
-                                <div className="overflow-clip relative shrink-0 w-5 h-5 cursor-pointer">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M5 7.5L10 12.5L15 7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+
 
                         <div className="flex gap-3 items-start relative shrink-0">
                             <button
@@ -854,20 +728,7 @@ const Meetings: React.FC = () => {
                                 </div>
                             </button>
 
-                            {/* Microsoft OneDrive Button */}
-                            <button className="bg-bg-surface-lv1 border border-bg-surface-pure flex gap-1 items-center justify-center overflow-hidden p-[10px] relative rounded-8 shrink-0 w-full cursor-pointer hover:bg-bg-surface-lv2 transition-colors">
-                                <div className="relative shrink-0 w-8 h-8 flex items-center justify-center">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M10 2.5L3.75 7.5V17.5L10 12.5L16.25 17.5V7.5L10 2.5Z" fill="#0078D4" />
-                                        <path d="M10 2.5L3.75 7.5L10 12.5L16.25 7.5L10 2.5Z" fill="#0078D4" opacity="0.8" />
-                                    </svg>
-                                </div>
-                                <div className="flex items-center justify-center px-1 py-0 relative shrink-0">
-                                    <div className="flex flex-col font-inter font-medium justify-center leading-0 relative shrink-0 text-sm text-text-secondary tracking-[-0.084px] whitespace-nowrap">
-                                        <p className="leading-5 m-0">Microsoft ondrive</p>
-                                    </div>
-                                </div>
-                            </button>
+
                         </div>
                     </div>
                 </>
@@ -901,27 +762,13 @@ const Meetings: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Language Selection */}
-                        <div className="flex flex-col gap-1 items-start relative shrink-0 w-full">
-                            <div className="bg-bg-surface-pure border border-stroke-secondary flex items-center justify-between px-3 py-2 relative rounded-8 shrink-0 w-full">
-                                <div className="flex flex-1 gap-2 items-center p-0 relative shrink-0">
-                                    <p className="font-inter font-normal text-base leading-6 overflow-ellipsis overflow-hidden relative shrink-0 text-text-primary tracking-[-0.176px] m-0">
-                                        English USA
-                                    </p>
-                                </div>
-                                <div className="overflow-clip relative shrink-0 w-5 h-5 cursor-pointer">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M5 7.5L10 12.5L15 7.5" stroke="#243632" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+
 
                         {/* Files Section */}
                         <div className="flex flex-col gap-1 items-start relative shrink-0 w-full">
                             <div className="flex gap-[2px] items-center relative shrink-0">
                                 <p className="font-inter font-medium text-base leading-6 text-text-primary tracking-[-0.176px] m-0">
-                                    Files
+                                    Select Audio File
                                 </p>
                             </div>
                             {!selectedFile ? (
@@ -936,7 +783,7 @@ const Meetings: React.FC = () => {
                                     />
                                     <div className="flex flex-1 gap-2 items-center p-0 relative shrink-0">
                                         <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px] m-0">
-                                            Click to select audio file
+                                            Click to open file explorer
                                         </p>
                                     </div>
                                 </div>
