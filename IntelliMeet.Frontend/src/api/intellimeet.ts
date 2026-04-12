@@ -14,12 +14,21 @@ export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
       const j = JSON.parse(text) as Record<string, unknown>;
       const errs = j.errors as Record<string, string[]> | undefined;
       const firstField = errs && Object.values(errs).flat()[0];
-      msg =
-        (typeof j.error === 'string' && j.error) ||
-        (typeof j.message === 'string' && j.message) ||
-        (typeof j.title === 'string' && j.title) ||
-        firstField ||
-        msg;
+      const code = typeof j.code === 'string' ? j.code : '';
+      const message = typeof j.message === 'string' ? j.message : '';
+      const errStr = typeof j.error === 'string' ? j.error : '';
+      const blob = `${code} ${message} ${errStr} ${text}`;
+      if (
+        code === 'FST_ERR_CALENDAR_CONNECTION_ALREADY_EXISTS' ||
+        blob.includes('FST_ERR_CALENDAR_CONNECTION_ALREADY_EXISTS') ||
+        (blob.includes('already exists') && blob.includes('calendar'))
+      ) {
+        msg =
+          'This Google account is already linked to Meeting BaaS. Open Calendar and use “Refresh connections”, then select the active calendar below.';
+      } else {
+        msg = message || errStr || (typeof j.title === 'string' && j.title) || firstField || msg;
+        if (errStr && message && errStr !== message && message.length < 400) msg = `${errStr}: ${message}`;
+      }
     } catch {
       /* use text */
     }
@@ -58,6 +67,8 @@ export type TranscriptDto = {
   status: number;
   rawText?: string | null;
   externalTranscriptionUrl?: string | null;
+  /** Diarization / raw transcription URL from Meeting BaaS */
+  externalRawTranscriptionUrl?: string | null;
   segments: { speaker: string; startSeconds: number; endSeconds: number; text: string }[];
 };
 
@@ -232,4 +243,7 @@ export const imApi = {
   listTodos: () => apiJson<TodoItemDto[]>(`/api/todos?userId=${DEMO_USER_ID}`),
   patchTodo: (id: string, body: { status?: number }) =>
     apiJson<TodoItemDto>(`/api/todos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  /** Resolves transcript (incl. Meeting BaaS URLs), runs Groq, persists summary / key points / action items. */
+  groqAnalyzeMeeting: (id: string) =>
+    apiJson<{ ok: boolean }>(`/api/meetings/${id}/groq-analyze`, { method: 'POST' }),
 };

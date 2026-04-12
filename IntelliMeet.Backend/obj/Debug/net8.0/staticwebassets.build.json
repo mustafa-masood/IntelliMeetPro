@@ -1,1 +1,12 @@
-{"Version":1,"Hash":"gmv9GgNi3LNuGLbf9kHPEJId8fCQ6YwZfuLoIA9MV8E=","Source":"IntelliMeet.Backend","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}
+{
+  "Version": 1,
+  "Hash": "jixtGpPNt+vTtARXCYHJCthGCCbqrNJHBrrty5689pk=",
+  "Source": "IntelliMeet.Backend",
+  "BasePath": "_content/IntelliMeet.Backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

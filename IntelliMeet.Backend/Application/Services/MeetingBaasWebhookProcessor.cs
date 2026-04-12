@@ -10,32 +10,32 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
     private readonly IWebhookEventRepository _webhooks;
     private readonly IMeetingBotRepository _bots;
     private readonly IMeetingRepository _meetings;
-    private readonly ITranscriptRepository _transcripts;
-    private readonly IRecordingAssetRepository _recordings;
     private readonly ICalendarConnectionRepository _calendars;
     private readonly ICalendarEventRepository _events;
     private readonly IMeetingBaasClient _mb;
+    private readonly IMeetingBaasArtifactApplier _artifacts;
+    private readonly IGroqAnalysisBackgroundTrigger _groqTrigger;
     private readonly ILogger<MeetingBaasWebhookProcessor> _logger;
 
     public MeetingBaasWebhookProcessor(
         IWebhookEventRepository webhooks,
         IMeetingBotRepository bots,
         IMeetingRepository meetings,
-        ITranscriptRepository transcripts,
-        IRecordingAssetRepository recordings,
         ICalendarConnectionRepository calendars,
         ICalendarEventRepository events,
         IMeetingBaasClient mb,
+        IMeetingBaasArtifactApplier artifacts,
+        IGroqAnalysisBackgroundTrigger groqTrigger,
         ILogger<MeetingBaasWebhookProcessor> logger)
     {
         _webhooks = webhooks;
         _bots = bots;
         _meetings = meetings;
-        _transcripts = transcripts;
-        _recordings = recordings;
         _calendars = calendars;
         _events = events;
         _mb = mb;
+        _artifacts = artifacts;
+        _groqTrigger = groqTrigger;
         _logger = logger;
     }
 
@@ -141,8 +141,9 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         bot.UpdatedAt = DateTimeOffset.UtcNow;
         _bots.Upsert(bot);
         if (details.Success && details.Data is not null)
-            ApplyArtifacts(bot.MeetingId, details.Data);
+            _artifacts.ApplyFromBotDetails(bot.MeetingId, details.Data);
         TryApplyArtifactsFromWebhookJson(bot.MeetingId, raw);
+        _groqTrigger.EnqueueIfEnabled(bot.MeetingId);
     }
 
     private void FailBot(string externalBotId, string raw)
@@ -174,52 +175,8 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         TryApplyArtifactsFromWebhookJson(bot.MeetingId, raw);
         var details = await _mb.GetBotAsync(externalBotId, ct).ConfigureAwait(false);
         if (details.Success && details.Data is not null)
-            ApplyArtifacts(bot.MeetingId, details.Data);
-    }
-
-    private void ApplyArtifacts(Guid meetingId, Application.Integration.BotDetailsData d)
-    {
-        var now = DateTimeOffset.UtcNow;
-        var exp = now.AddHours(3);
-        void Add(string kind, string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return;
-            _recordings.Upsert(new RecordingAsset
-            {
-                Id = Guid.NewGuid(),
-                MeetingId = meetingId,
-                Kind = kind,
-                Url = url!,
-                ExpiresAt = exp,
-                CreatedAt = now
-            });
-        }
-        Add("audio", d.Audio);
-        Add("video", d.Video);
-        var t = _transcripts.GetByMeetingId(meetingId);
-        if (t is null)
-        {
-            t = new Transcript
-            {
-                Id = Guid.NewGuid(),
-                MeetingId = meetingId,
-                Status = TranscriptStatus.Ready,
-                RawText = null,
-                ExternalTranscriptionUrl = d.Transcription,
-                ExternalRawTranscriptionUrl = d.Diarization,
-                UpdatedAt = now
-            };
-            _transcripts.Upsert(t);
-        }
-        else
-        {
-            t.Status = TranscriptStatus.Ready;
-            t.ExternalTranscriptionUrl ??= d.Transcription;
-            t.ExternalRawTranscriptionUrl ??= d.Diarization;
-            t.UpdatedAt = now;
-            _transcripts.Upsert(t);
-        }
+            _artifacts.ApplyFromBotDetails(bot.MeetingId, details.Data);
+        _groqTrigger.EnqueueIfEnabled(bot.MeetingId);
     }
 
     private void TryApplyArtifactsFromWebhookJson(Guid meetingId, string raw)
@@ -229,15 +186,29 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
             using var doc = JsonDocument.Parse(raw);
             if (!doc.RootElement.TryGetProperty("data", out var data))
                 return;
-            string? audio = null, trans = null, rawT = null;
+            string? audio = null, trans = null, diarization = null, rawT = null, video = null;
             if (data.TryGetProperty("audio", out var a))
                 audio = a.GetString();
             if (data.TryGetProperty("transcription", out var tr))
                 trans = tr.GetString();
+            if (data.TryGetProperty("diarization", out var di))
+                diarization = di.GetString();
             if (data.TryGetProperty("raw_transcription", out var rt))
                 rawT = rt.GetString();
-            var fake = new Application.Integration.BotDetailsData { Audio = audio, Transcription = trans, Diarization = rawT };
-            ApplyArtifacts(meetingId, fake);
+            if (data.TryGetProperty("mp4", out var mp4))
+                video = mp4.GetString();
+            if (string.IsNullOrEmpty(video) && data.TryGetProperty("video", out var v))
+                video = v.GetString();
+            // ApplyArtifacts maps Diarization → ExternalRawTranscriptionUrl; prefer explicit diarization, else raw_transcription.
+            var fake = new Application.Integration.BotDetailsData
+            {
+                Audio = audio,
+                Video = video,
+                Transcription = trans,
+                Diarization = diarization,
+                RawTranscription = rawT
+            };
+            _artifacts.ApplyFromBotDetails(meetingId, fake);
         }
         catch
         {

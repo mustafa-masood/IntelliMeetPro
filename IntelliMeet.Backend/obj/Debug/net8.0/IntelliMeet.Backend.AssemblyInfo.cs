@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IntelliMeet.Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+91ecfbf5d61846e9479b4d437c5a7c208aca04f8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e131b1b646dfbfd8880ba6e42c39103e1873dd69")]
 [assembly: System.Reflection.AssemblyProductAttribute("IntelliMeet.Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IntelliMeet.Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

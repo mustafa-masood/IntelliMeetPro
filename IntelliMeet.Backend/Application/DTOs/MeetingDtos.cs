@@ -52,6 +52,8 @@ public sealed class TranscriptDto
     public TranscriptStatus Status { get; init; }
     public string? RawText { get; init; }
     public string? ExternalTranscriptionUrl { get; init; }
+    /// <summary>Diarization or raw transcription presigned URL from Meeting BaaS.</summary>
+    public string? ExternalRawTranscriptionUrl { get; init; }
     public IReadOnlyList<TranscriptSegmentDto> Segments { get; init; } = Array.Empty<TranscriptSegmentDto>();
 }
 

@@ -14,4 +14,12 @@ public sealed class InMemoryActionItemRepository : IActionItemRepository
     public ActionItem? GetById(Guid id) => _store.GetValueOrDefault(id);
 
     public void Upsert(ActionItem item) => _store[item.Id] = item;
+
+    public void RemoveByMeetingIdAndSource(Guid meetingId, string source)
+    {
+        foreach (var id in _store.Where(kv => kv.Value.MeetingId == meetingId && string.Equals(kv.Value.Source, source, StringComparison.Ordinal))
+                     .Select(kv => kv.Key)
+                     .ToList())
+            _store.TryRemove(id, out _);
+    }
 }

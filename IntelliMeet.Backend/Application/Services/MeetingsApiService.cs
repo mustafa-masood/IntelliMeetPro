@@ -1,5 +1,6 @@
 using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Application.DTOs;
+using IntelliMeet.Backend.Application.Integration;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
 
@@ -17,6 +18,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
     private readonly IRecordingAssetRepository _recordings;
     private readonly IWebhookEventRepository _webhooks;
     private readonly IMeetingBaasClient _mb;
+    private readonly IMeetingBaasArtifactApplier _artifacts;
+    private readonly IGroqAnalysisBackgroundTrigger _groqTrigger;
+    private readonly ITranscriptTextResolver _transcriptText;
     private readonly ILogger<MeetingsApiService> _logger;
 
     public MeetingsApiService(
@@ -30,6 +34,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
         IRecordingAssetRepository recordings,
         IWebhookEventRepository webhooks,
         IMeetingBaasClient mb,
+        IMeetingBaasArtifactApplier artifacts,
+        IGroqAnalysisBackgroundTrigger groqTrigger,
+        ITranscriptTextResolver transcriptText,
         ILogger<MeetingsApiService> logger)
     {
         _meetings = meetings;
@@ -42,6 +49,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
         _recordings = recordings;
         _webhooks = webhooks;
         _mb = mb;
+        _artifacts = artifacts;
+        _groqTrigger = groqTrigger;
+        _transcriptText = transcriptText;
         _logger = logger;
     }
 
@@ -69,7 +79,7 @@ public sealed class MeetingsApiService : IMeetingsApiService
         var m = _meetings.GetById(id);
         if (m is null)
             return null;
-        await RefreshBotsFromMeetingBaasAsync(m.Id, ct).ConfigureAwait(false);
+        await SyncMeetingBaasStateAsync(m.Id, ct).ConfigureAwait(false);
         var bots = _bots.GetByMeetingId(m.Id).Select(b => new MeetingBotSummaryDto
         {
             Id = b.Id,
@@ -111,7 +121,8 @@ public sealed class MeetingsApiService : IMeetingsApiService
         };
     }
 
-    private async Task RefreshBotsFromMeetingBaasAsync(Guid meetingId, CancellationToken ct)
+    /// <summary>Pull bot status and, when relevant, full bot details + artifact URLs from Meeting BaaS (fallback when webhooks cannot reach localhost).</summary>
+    private async Task SyncMeetingBaasStateAsync(Guid meetingId, CancellationToken ct)
     {
         foreach (var bot in _bots.GetByMeetingId(meetingId))
         {
@@ -119,33 +130,118 @@ public sealed class MeetingsApiService : IMeetingsApiService
                 continue;
             try
             {
+                var wasCompleted = bot.Status == BotOperationalStatus.Completed;
+
                 var st = await _mb.GetBotStatusAsync(bot.ExternalBotId, ct).ConfigureAwait(false);
                 if (!st.Success || st.Data is null)
                     continue;
+
                 bot.Status = BotStatusMapper.FromMeetingBaas(st.Data.Status);
                 bot.TranscriptionStatus = BotStatusMapper.TranscriptionFromMeetingBaas(st.Data.TranscriptionStatus);
                 bot.UpdatedAt = DateTimeOffset.UtcNow;
                 _bots.Upsert(bot);
+
+                if (!ShouldFetchFullBotDetails(st.Data.Status))
+                    continue;
+
+                var details = await _mb.GetBotAsync(bot.ExternalBotId, ct).ConfigureAwait(false);
+                if (!details.Success || details.Data is null)
+                    continue;
+
+                ApplyMeetingAndBotFromBotDetails(meetingId, bot, details.Data);
+                var urlsNew = _artifacts.ApplyFromBotDetails(meetingId, details.Data);
+                var transitioned = !wasCompleted && bot.Status == BotOperationalStatus.Completed;
+                if (urlsNew || transitioned)
+                    _groqTrigger.EnqueueIfEnabled(meetingId);
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Skip bot refresh for {BotId}", bot.ExternalBotId);
+                _logger.LogDebug(ex, "Skip Meeting BaaS sync for bot {BotId}", bot.ExternalBotId);
             }
         }
     }
 
-    public Task<TranscriptDto?> GetTranscriptAsync(Guid id, CancellationToken ct)
+    private void ApplyMeetingAndBotFromBotDetails(Guid meetingId, MeetingBot bot, BotDetailsData d)
+    {
+        var s = d.Status?.ToLowerInvariant();
+        if (s == "completed")
+        {
+            bot.Status = BotOperationalStatus.Completed;
+            bot.TranscriptionStatus = TranscriptStatus.Ready;
+            var m = _meetings.GetById(meetingId);
+            if (m is not null)
+            {
+                m.Status = MeetingStatus.Completed;
+                m.UpdatedAt = DateTimeOffset.UtcNow;
+                _meetings.Upsert(m);
+            }
+        }
+        else if (s == "failed")
+        {
+            bot.Status = BotOperationalStatus.Failed;
+            var m = _meetings.GetById(meetingId);
+            if (m is not null)
+            {
+                m.Status = MeetingStatus.Failed;
+                m.UpdatedAt = DateTimeOffset.UtcNow;
+                _meetings.Upsert(m);
+            }
+        }
+        else if (s == "transcribing")
+        {
+            bot.Status = BotOperationalStatus.Transcribing;
+            bot.TranscriptionStatus = TranscriptStatus.Processing;
+        }
+
+        bot.UpdatedAt = DateTimeOffset.UtcNow;
+        _bots.Upsert(bot);
+    }
+
+    private static bool ShouldFetchFullBotDetails(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return false;
+        return status.ToLowerInvariant() switch
+        {
+            "completed" or "transcribing" or "failed" or "call_ended" or "recording_succeeded" => true,
+            _ => false
+        };
+    }
+
+    public async Task<TranscriptDto?> GetTranscriptAsync(Guid id, CancellationToken ct)
     {
         if (_meetings.GetById(id) is null)
-            return Task.FromResult<TranscriptDto?>(null);
+            return null;
+        await SyncMeetingBaasStateAsync(id, ct).ConfigureAwait(false);
         var t = _transcripts.GetByMeetingId(id);
         if (t is null)
-            return Task.FromResult<TranscriptDto?>(new TranscriptDto
+            return new TranscriptDto
             {
                 MeetingId = id,
                 Status = TranscriptStatus.None,
                 Segments = Array.Empty<TranscriptSegmentDto>()
-            });
+            };
+
+        var rawForDto = t.RawText;
+        if (string.IsNullOrWhiteSpace(rawForDto))
+        {
+            try
+            {
+                var resolved = await _transcriptText.ResolvePlainTextAsync(id, ct).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(resolved))
+                {
+                    rawForDto = resolved;
+                    t.RawText = resolved;
+                    t.UpdatedAt = DateTimeOffset.UtcNow;
+                    _transcripts.Upsert(t);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Transcript hydrate skipped for meeting {MeetingId}", id);
+            }
+        }
+
         var segments = _transcripts.GetSegments(t.Id).Select(s => new TranscriptSegmentDto
         {
             Speaker = s.Speaker,
@@ -153,14 +249,15 @@ public sealed class MeetingsApiService : IMeetingsApiService
             EndSeconds = s.EndSeconds,
             Text = s.Text
         }).ToList();
-        return Task.FromResult<TranscriptDto?>(new TranscriptDto
+        return new TranscriptDto
         {
             MeetingId = id,
             Status = t.Status,
-            RawText = t.RawText,
+            RawText = rawForDto,
             ExternalTranscriptionUrl = t.ExternalTranscriptionUrl,
+            ExternalRawTranscriptionUrl = t.ExternalRawTranscriptionUrl,
             Segments = segments
-        });
+        };
     }
 
     public Task<MeetingSummaryDto?> GetSummaryAsync(Guid id, CancellationToken ct)
