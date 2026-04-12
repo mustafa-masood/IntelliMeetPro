@@ -36,6 +36,15 @@ export type Meeting = {
   summary: string;
 };
 
+export type ApiActionItemRow = {
+  id: string;
+  title: string;
+  description?: string | null;
+  owner?: string | null;
+  dueDate?: string | null;
+  addToTodoChecked: boolean;
+};
+
 export type MeetingDetailsProps = {
   summary: string;
   keyPoints: string[];
@@ -45,5 +54,10 @@ export type MeetingDetailsProps = {
   meetingTitle?: string;
   meetingDate?: string;
   onBack: () => void;
+  /** When set, action items can be synced to To-Dos via API. */
+  meetingIdForApi?: string | null;
+  audioPlaybackUrl?: string | null;
+  apiActionItems?: ApiActionItemRow[] | null;
+  onConvertActionToTodo?: (actionItemId: string) => Promise<void>;
 };
 

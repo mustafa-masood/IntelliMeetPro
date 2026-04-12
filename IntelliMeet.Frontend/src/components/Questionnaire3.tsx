@@ -37,6 +37,7 @@ const Questionnaire3: React.FC = () => {
     return (
         <div className="flex w-screen h-screen bg-bg-surface-pure items-center justify-center">
             <div className="w-full max-w-[800px] flex flex-col gap-6 items-center p-6">
+                
                 {/* Logo */}
                 <div className="flex items-center justify-center mb-8">
                     <img
@@ -59,41 +60,63 @@ const Questionnaire3: React.FC = () => {
 
                 {/* Options */}
                 <div className="flex flex-wrap gap-3 justify-center w-full mt-8">
-                    {helpOptions.map((option) => (
-                        <button
-                            key={option}
-                            type="button"
-                            onClick={() => toggleOption(option)}
-                            className={`px-4 py-2 rounded-[20px] font-inter font-medium text-base text-white tracking-[-0.16px] transition-colors cursor-pointer ${
-                                selectedOptions.includes(option)
-                                    ? 'bg-primary-600'
-                                    : 'bg-primary-500 hover:bg-primary-600'
-                            }`}
-                        >
-                            {option}
-                        </button>
-                    ))}
+                    {helpOptions.map((option) => {
+                        const isSelected = selectedOptions.includes(option);
+
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => toggleOption(option)}
+                                className={`px-4 py-2 rounded-[20px] font-inter font-medium text-base tracking-[-0.16px] border transition-all duration-200 ${
+                                    isSelected
+                                        ? 'bg-primary-100 text-primary-700 border-primary-600 ring-2 ring-primary-300'
+                                        : 'bg-primary-500 text-white border-primary-200 hover:bg-primary-600'
+                                }`}
+                            >
+                                {option}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Navigation Buttons */}
                 <div className="flex gap-2 mt-8">
                     <button
                         onClick={handleBack}
-                        className="bg-white border-2 border-primary-100 rounded-8 px-4 py-3 flex items-center justify-center gap-1 cursor-pointer font-inter font-medium text-sm text-primary-500 tracking-[-0.084px] hover:bg-primary-50 transition-colors"
+                        className="bg-white border-2 border-primary-100 rounded-8 px-4 py-3 flex items-center justify-center gap-1 cursor-pointer font-inter font-medium text-sm text-primary-500 tracking-[-0.084px] hover:bg-primary-50 transition-all hover:opacity-90 active:opacity-80"
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path
+                                d="M15 18L9 12L15 6"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
                         </svg>
                         Back
                     </button>
-                    <button
-                        onClick={handleNext}
-                        disabled={selectedOptions.length === 0}
-                        className="bg-primary-600 border-2 border-primary-200 rounded-8 px-4 py-3 flex items-center justify-center cursor-pointer font-inter font-medium text-sm text-white tracking-[-0.084px] hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Next
-                    </button>
+
+                    {selectedOptions.length > 0 && (
+                        <button
+                            onClick={handleNext}
+                            className="bg-white border-2 border-primary-100 rounded-8 px-4 py-3 flex items-center justify-center gap-1 cursor-pointer font-inter font-medium text-sm text-primary-500 tracking-[-0.084px] hover:bg-primary-50 transition-all hover:opacity-90 active:opacity-80"
+                        >
+                            Next
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M9 6L15 12L9 18"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        </button>
+                    )}
                 </div>
+
             </div>
         </div>
     );

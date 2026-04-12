@@ -77,25 +77,24 @@ const Pricing: React.FC = () => {
     return (
         <div className="flex w-screen h-screen bg-bg-surface-pure">
             {/* Left Column - Pricing */}
-            <div className="flex-1 flex items-center justify-center p-6 bg-bg-surface-lv2 rounded-24">
+            <div className="flex-1 flex items-start justify-center p-6 bg-bg-surface-lv2 rounded-24 overflow-y-auto">
                 <div className="w-full max-w-7xl flex flex-col gap-12 items-center py-12">
-                    {/* Logo */}
+                    
+
+                    {/* Heading */}
+                    <div className="flex flex-row gap-4 items-center text-center max-w-[709px]">
+                        {/* Logo */}
                     <div className="flex items-center justify-center">
                         <img
-                            src="/src/assets/intellimeet-logo-light.png"
+                            src="/src/assets/intellimeet-logo-dark.png"
                             alt="IntelliMeet Logo"
                             className="w-[100px] h-[100px] rounded-8 object-contain"
                         />
                     </div>
-
-                    {/* Heading */}
-                    <div className="flex flex-col gap-4 items-center text-center max-w-[709px]">
+                    <img width="100" height="100" src="https://img.icons8.com/ios/50/vertical-line.png" alt="vertical-line"/>
                         <h1 className="font-inter font-bold text-[56px] text-text-primary tracking-[-2.8px] leading-[1.1] m-0">
                             Plans & Pricing
                         </h1>
-                        <p className="font-inter font-normal text-[17px] text-text-secondary tracking-[-0.51px] leading-[1.45] m-0">
-                            Choose the plan that fits your needs. All plans include essential features to get you started, with options to scale as you grow. No hidden fees and the flexibility to change anytime.
-                        </p>
                     </div>
 
                     {/* Payment Mode Toggle */}

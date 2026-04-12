@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
 import { FaSlack, FaGoogle, FaTrello, } from "react-icons/fa";
@@ -16,7 +15,6 @@ interface Integration {
 }
 
 const AppIntegrations: React.FC = () => {
-    const navigate = useNavigate();
     const [activeFilter, setActiveFilter] =
         useState<'all' | 'connected' | 'disconnected'>('all');
 

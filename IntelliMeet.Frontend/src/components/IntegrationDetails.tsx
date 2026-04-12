@@ -6,9 +6,9 @@ import SearchBar from './SearchBar';
 const IntegrationDetails: React.FC = () => {
     const navigate = useNavigate();
     const { integrationId } = useParams<{ integrationId: string }>();
-    const [workspace, setWorkspace] = useState('My Team');
-    const [project, setProject] = useState('Project Management');
-    const [list, setList] = useState('Select List');
+    const [workspace] = useState('My Team');
+    const [project] = useState('Project Management');
+    const [list] = useState('Select List');
     const [createAITasks, setCreateAITasks] = useState(true);
     const [autoAssignTasks, setAutoAssignTasks] = useState(true);
 

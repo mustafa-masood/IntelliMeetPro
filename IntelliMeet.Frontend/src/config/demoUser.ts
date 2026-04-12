@@ -1,0 +1,2 @@
+/** Matches seeded demo user in backend (InMemoryDataSeeder). */
+export const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';

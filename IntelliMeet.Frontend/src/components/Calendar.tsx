@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
+import { imApi, type GoogleAuthConfig, type RawCalendarItem, type CalendarConnection, type CalendarEventDto } from '../api/intellimeet';
+import { getGoogleRefreshToken, getGoogleEmail, clearGoogleSession } from '../lib/googleSession';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -336,6 +338,43 @@ const SummaryStep: React.FC<SummaryProps> = ({
 };
 
 const Calendar: React.FC = () => {
+    const [googleCfg, setGoogleCfg] = useState<GoogleAuthConfig | null>(null);
+    const [rawCalendars, setRawCalendars] = useState<RawCalendarItem[]>([]);
+    const [selectedRawId, setSelectedRawId] = useState('');
+    const [connections, setConnections] = useState<CalendarConnection[]>([]);
+    const [selectedConnectionId, setSelectedConnectionId] = useState('');
+    const [events, setEvents] = useState<CalendarEventDto[]>([]);
+    const [integMsg, setIntegMsg] = useState<string | null>(null);
+    const [integBusy, setIntegBusy] = useState(false);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const cfg = await imApi.googleAuthConfig();
+                setGoogleCfg(cfg);
+                const conns = await imApi.listCalendarConnections();
+                setConnections(conns);
+            } catch {
+                setGoogleCfg(null);
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedConnectionId) {
+            setEvents([]);
+            return;
+        }
+        (async () => {
+            try {
+                const ev = await imApi.listCalendarEvents(selectedConnectionId);
+                setEvents(ev);
+            } catch {
+                setEvents([]);
+            }
+        })();
+    }, [selectedConnectionId]);
+
     const [step, setStep] = useState<Step>('input');
     const [meetingTitle, setMeetingTitle] = useState('');
     const [selectedDate, setSelectedDate] = useState<any>(null);
@@ -379,6 +418,177 @@ const Calendar: React.FC = () => {
                     <h1 className="font-inter font-medium text-2xl text-text-primary tracking-[-0.084px] mt-5">
                         Calendar
                     </h1>
+
+                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-8 p-4 flex flex-col gap-3">
+                        <h2 className="font-inter font-medium text-sm text-text-primary">Google Calendar → Meeting BaaS</h2>
+                        <p className="font-inter text-xs text-text-secondary">
+                            Add redirect URI <code className="bg-bg-surface-lv1 px-1 rounded">http://localhost:5173/oauth/google/callback</code> in Google Cloud Console. Configure backend{' '}
+                            <code className="bg-bg-surface-lv1 px-1 rounded">MeetingBaas:ApiKey</code> and{' '}
+                            <code className="bg-bg-surface-lv1 px-1 rounded">GoogleOAuth</code> (user secrets).
+                        </p>
+                        {integMsg && <p className="text-xs text-primary-700 font-inter">{integMsg}</p>}
+                        <div className="flex flex-wrap gap-2 items-center">
+                            {googleCfg?.clientId ? (
+                                <button
+                                    type="button"
+                                    className="px-3 py-2 bg-white border border-stroke-primary rounded-8 text-sm font-inter"
+                                    onClick={() => {
+                                        window.location.href = googleCfg.authorizeUrl;
+                                    }}
+                                >
+                                    Sign in with Google
+                                </button>
+                            ) : (
+                                <span className="text-xs text-amber-700">Backend Google OAuth not configured.</span>
+                            )}
+                            <span className="text-xs text-text-secondary font-inter truncate max-w-[240px]">
+                                {getGoogleEmail() || getGoogleRefreshToken() ? `Session: ${getGoogleEmail() || 'token stored'}` : 'Not signed in'}
+                            </span>
+                            <button type="button" className="text-xs text-text-secondary underline" onClick={() => { clearGoogleSession(); setIntegMsg('Cleared Google session'); }}>
+                                Clear browser session
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-end">
+                            <button
+                                type="button"
+                                disabled={integBusy || !getGoogleRefreshToken()}
+                                className="px-3 py-2 bg-bg-surface-lv1 border border-stroke-primary rounded-8 text-sm font-inter disabled:opacity-50"
+                                onClick={async () => {
+                                    const rt = getGoogleRefreshToken();
+                                    if (!rt) return;
+                                    setIntegBusy(true);
+                                    setIntegMsg(null);
+                                    try {
+                                        const list = await imApi.listRawCalendars(rt);
+                                        setRawCalendars(list);
+                                        const primary = list.find((c) => c.isPrimary);
+                                        setSelectedRawId(primary?.id || list[0]?.id || '');
+                                        setIntegMsg(`Loaded ${list.length} calendar(s) from Google.`);
+                                    } catch (e) {
+                                        setIntegMsg(e instanceof Error ? e.message : 'list-raw failed');
+                                    } finally {
+                                        setIntegBusy(false);
+                                    }
+                                }}
+                            >
+                                List my calendars
+                            </button>
+                            <select
+                                className="border border-stroke-primary rounded-8 px-2 py-2 text-sm font-inter min-w-[200px]"
+                                value={selectedRawId}
+                                onChange={(e) => setSelectedRawId(e.target.value)}
+                            >
+                                <option value="">Select calendar…</option>
+                                {rawCalendars.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} ({c.email})
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                disabled={integBusy || !getGoogleRefreshToken() || !selectedRawId}
+                                className="px-3 py-2 bg-primary-500 text-white rounded-8 text-sm font-inter disabled:opacity-50"
+                                onClick={async () => {
+                                    const rt = getGoogleRefreshToken();
+                                    if (!rt || !selectedRawId) return;
+                                    setIntegBusy(true);
+                                    setIntegMsg(null);
+                                    try {
+                                        const conn = await imApi.connectCalendar(rt, selectedRawId);
+                                        setConnections(await imApi.listCalendarConnections());
+                                        setSelectedConnectionId(conn.id);
+                                        setIntegMsg('Connected to Meeting BaaS.');
+                                    } catch (e) {
+                                        setIntegMsg(e instanceof Error ? e.message : 'connect failed');
+                                    } finally {
+                                        setIntegBusy(false);
+                                    }
+                                }}
+                            >
+                                Connect to Meeting BaaS
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <label className="text-xs font-inter text-text-secondary">Active connection</label>
+                            <select
+                                className="border border-stroke-primary rounded-8 px-2 py-2 text-sm font-inter flex-1 min-w-[200px]"
+                                value={selectedConnectionId}
+                                onChange={(e) => setSelectedConnectionId(e.target.value)}
+                            >
+                                <option value="">—</option>
+                                {connections.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.externalCalendarId.slice(0, 8)}… ({c.status})
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                disabled={integBusy || !selectedConnectionId}
+                                className="px-3 py-2 border border-stroke-primary rounded-8 text-sm font-inter"
+                                onClick={async () => {
+                                    setIntegBusy(true);
+                                    try {
+                                        await imApi.syncCalendar(selectedConnectionId);
+                                        setEvents(await imApi.listCalendarEvents(selectedConnectionId));
+                                        setIntegMsg('Synced.');
+                                    } catch (e) {
+                                        setIntegMsg(e instanceof Error ? e.message : 'sync failed');
+                                    } finally {
+                                        setIntegBusy(false);
+                                    }
+                                }}
+                            >
+                                Sync now
+                            </button>
+                        </div>
+                        <p className="text-xs text-text-secondary font-inter max-w-xl">
+                            Meeting BaaS joins only after you schedule a bot per event. The calendar entry must include a meeting link (Google Meet, Zoom, Teams, etc.). Use Sync now after adding or changing events.
+                        </p>
+                        {events.length > 0 && (
+                            <div className="border border-stroke-primary rounded-8 overflow-hidden max-h-56 overflow-y-auto">
+                                <table className="w-full text-xs font-inter">
+                                    <thead className="bg-bg-surface-lv1">
+                                        <tr>
+                                            <th className="text-left p-2">Event</th>
+                                            <th className="text-left p-2">Start</th>
+                                            <th className="p-2">Bot</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {events.map((ev) => (
+                                            <tr key={ev.id} className="border-t border-stroke-primary">
+                                                <td className="p-2">{ev.title}</td>
+                                                <td className="p-2 whitespace-nowrap">{new Date(ev.startUtc).toLocaleString()}</td>
+                                                <td className="p-2">
+                                                    <button
+                                                        type="button"
+                                                        className="text-primary-600 underline disabled:opacity-50"
+                                                        disabled={integBusy || !selectedConnectionId || ev.isCancelled}
+                                                        onClick={async () => {
+                                                            setIntegBusy(true);
+                                                            try {
+                                                                await imApi.scheduleCalendarBot(selectedConnectionId, ev.externalEventId, 'IntelliMeet Notetaker');
+                                                                setEvents(await imApi.listCalendarEvents(selectedConnectionId));
+                                                                setIntegMsg(`Scheduled bot for ${ev.title}`);
+                                                            } catch (e) {
+                                                                setIntegMsg(e instanceof Error ? e.message : 'schedule failed');
+                                                            } finally {
+                                                                setIntegBusy(false);
+                                                            }
+                                                        }}
+                                                    >
+                                                        Schedule bot
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Table Container */}

@@ -21,6 +21,7 @@ import ForgotPassword from './components/ForgotPassword';
 import EmailCheck from './components/EmailCheck';
 import CreateNewPassword from './components/CreateNewPassword';
 import PasswordChanged from './components/PasswordChanged';
+import GoogleOAuthCallback from './components/GoogleOAuthCallback';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/meetings" element={<Meetings />} />
         <Route path="/calendar" element={<Calendar />} />
+        <Route path="/oauth/google/callback" element={<GoogleOAuthCallback />} />
         <Route path="/todos" element={<Todos />} />
         <Route path="/ask-ai" element={<AskAI />} />
         <Route path="/app-integrations" element={<AppIntegrations />} />

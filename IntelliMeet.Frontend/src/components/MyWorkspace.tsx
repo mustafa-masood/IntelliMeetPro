@@ -7,8 +7,8 @@ const MyWorkspace: React.FC = () => {
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [teams, setTeams] = useState<string[]>(['Design Team']);
     const [email, setEmail] = useState('hipixem@gmail.com');
-    const [selectedTeam, setSelectedTeam] = useState('Select team');
-    const [selectedUser, setSelectedUser] = useState('Select User');
+    const [selectedTeam] = useState('Select team');
+    const [selectedUser] = useState('Select User');
     const [automaticNotes, setAutomaticNotes] = useState(true);
     const [transcriptionNotes, setTranscriptionNotes] = useState(true);
     const [sendRecaps, setSendRecaps] = useState(true);

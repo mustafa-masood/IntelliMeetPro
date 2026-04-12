@@ -13,8 +13,13 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     meetingTitle = 'Meeting Details',
     meetingDate,
     onBack,
+    meetingIdForApi = null,
+    audioPlaybackUrl = null,
+    apiActionItems = null,
+    onConvertActionToTodo,
 }) => {
     const [activeTab, setActiveTab] = useState<'summary' | 'transcription'>('summary');
+    const [convertingId, setConvertingId] = useState<string | null>(null);
     
     // Ensure transcript has required structure
     const safeTranscript = transcript || { fullText: '', segments: [] };
@@ -171,19 +176,66 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                         </div>
                                     )}
 
-                                    {actionItems.length > 0 && (
+                                    {meetingIdForApi && onConvertActionToTodo ? (
                                         <div>
                                             <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
                                                 Action Items
                                             </h2>
-                                            <ol className="list-decimal list-inside space-y-1">
-                                                {actionItems.map((item, index) => (
-                                                    <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
-                                                        {item.description} {item.owner && `(Owner: ${item.owner})`} {item.dueDate && `(Due: ${item.dueDate})`}
-                                                    </li>
-                                                ))}
-                                            </ol>
+                                            {apiActionItems && apiActionItems.length > 0 ? (
+                                                <ul className="space-y-3">
+                                                    {apiActionItems.map((item) => (
+                                                        <li
+                                                            key={item.id}
+                                                            className="font-inter text-base leading-6 text-text-secondary tracking-[-0.176px] flex flex-wrap items-start gap-2"
+                                                        >
+                                                            <label className="flex items-start gap-2 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="mt-1"
+                                                                    disabled={item.addToTodoChecked || convertingId === item.id}
+                                                                    checked={item.addToTodoChecked}
+                                                                    onChange={async () => {
+                                                                        if (item.addToTodoChecked) return;
+                                                                        setConvertingId(item.id);
+                                                                        try {
+                                                                            await onConvertActionToTodo(item.id);
+                                                                        } finally {
+                                                                            setConvertingId(null);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <span>
+                                                                    <span className="font-medium text-text-primary">{item.title}</span>
+                                                                    {item.description ? ` — ${item.description}` : ''}{' '}
+                                                                    {item.owner && `(Owner: ${item.owner})`}{' '}
+                                                                    {item.dueDate && `(Due: ${item.dueDate})`}
+                                                                    {item.addToTodoChecked && (
+                                                                        <span className="text-primary-600 text-sm ml-1">· Added to To-Dos</span>
+                                                                    )}
+                                                                </span>
+                                                            </label>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="font-inter text-sm text-text-secondary">No action items for this meeting yet.</p>
+                                            )}
                                         </div>
+                                    ) : (
+                                        actionItems.length > 0 && (
+                                            <div>
+                                                <h2 className="font-inter font-medium text-lg leading-6 text-text-primary tracking-[-0.27px] mb-2">
+                                                    Action Items
+                                                </h2>
+                                                <ol className="list-decimal list-inside space-y-1">
+                                                    {actionItems.map((item, index) => (
+                                                        <li key={index} className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px]">
+                                                            {item.description} {item.owner && `(Owner: ${item.owner})`} {item.dueDate && `(Due: ${item.dueDate})`}
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             ) : (
@@ -360,20 +412,19 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                 </div>
 
                 {/* Audio Player */}
-                <div className="bg-bg-surface-pure border border-stroke-primary border-t-0 rounded-bl-12 rounded-br-12 px-8 py-4 flex items-center gap-4">
-                    <button className="w-9 h-9 rounded-full bg-[#6cc58d] flex items-center justify-center cursor-pointer">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M6.66667 5V15M13.3333 5V15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                    </button>
-                    <div className="flex-1 relative">
-                        <div className="bg-[#d9d9d9] h-3 rounded-full">
-                            <div className="bg-primary-500 h-3 rounded-full" style={{ width: '12%' }}></div>
+                <div className="bg-bg-surface-pure border border-stroke-primary border-t-0 rounded-bl-12 rounded-br-12 px-8 py-4 flex flex-col gap-2">
+                    {audioPlaybackUrl ? (
+                        <audio className="w-full max-w-xl" controls src={audioPlaybackUrl} />
+                    ) : (
+                        <div className="flex items-center gap-4">
+                            <button type="button" className="w-9 h-9 rounded-full bg-[#6cc58d] flex items-center justify-center cursor-pointer opacity-50" disabled>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M6.66667 5V15M13.3333 5V15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                            </button>
+                            <span className="font-inter text-sm text-text-secondary">No recording URL yet (join a bot and complete the meeting).</span>
                         </div>
-                    </div>
-                    <span className="font-inter font-normal text-sm tracking-[-0.084px]">
-                        <span className="text-text-secondary">01:00</span> / <span className="text-text-primary">08:52</span>
-                    </span>
+                    )}
                 </div>
             </div>
 
