@@ -1,6 +1,7 @@
 using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Application.DTOs;
 using IntelliMeet.Backend.Application.Integration;
+using IntelliMeet.Backend.Application.Utilities;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
 using IntelliMeet.Backend.Options;
@@ -307,8 +308,8 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             var id = existing?.Id ?? Guid.NewGuid();
             var startRaw = e.StartTime ?? e.Start;
             var endRaw = e.EndTime ?? e.End;
-            var start = Parse(startRaw) ?? existing?.StartUtc ?? now;
-            var end = Parse(endRaw) ?? existing?.EndUtc ?? start.AddHours(1);
+            var start = DateTimeUtils.TryParseIso(startRaw) ?? existing?.StartUtc ?? now;
+            var end = DateTimeUtils.TryParseIso(endRaw) ?? existing?.EndUtc ?? start.AddHours(1);
             var isCancelled = e.IsCancelled == true
                 || string.Equals(e.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
                 || (string.IsNullOrWhiteSpace(e.Status) && e.IsCancelled is null && (existing?.IsCancelled ?? false));
@@ -329,13 +330,6 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             };
             _events.Upsert(evt);
         }
-    }
-
-    private static DateTimeOffset? Parse(string? iso)
-    {
-        if (string.IsNullOrWhiteSpace(iso))
-            return null;
-        return DateTimeOffset.TryParse(iso, out var d) ? d : null;
     }
 
     private static string? InferPlatform(string? url)

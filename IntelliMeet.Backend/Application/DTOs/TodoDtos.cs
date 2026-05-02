@@ -18,10 +18,15 @@ public sealed class TodoItemDto
 public sealed class CreateTodoRequestDto
 {
     [Required]
+    [MaxLength(500)]
     public string Title { get; set; } = string.Empty;
 
+    [MaxLength(2000)]
     public string? Description { get; set; }
+
+    [MaxLength(100)]
     public string Type { get; set; } = "manual";
+
     public DateTimeOffset? DueDate { get; set; }
     public Guid? UserId { get; set; }
 }
@@ -29,7 +34,10 @@ public sealed class CreateTodoRequestDto
 public sealed class PatchTodoRequestDto
 {
     public TodoStatus? Status { get; set; }
+
+    [MaxLength(500)]
     public string? Title { get; set; }
+
     public DateTimeOffset? DueDate { get; set; }
 }
 

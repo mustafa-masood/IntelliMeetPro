@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Options;
 using Microsoft.Extensions.Options;
 
@@ -18,7 +19,7 @@ public sealed class GroqChatService : IGroqChatService
         _http = http;
         _opt = opt.Value;
         _logger = logger;
-        _http.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
+        _http.BaseAddress = new Uri(_opt.BaseUrl.TrimEnd('/') + "/");
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
@@ -27,10 +28,10 @@ public sealed class GroqChatService : IGroqChatService
         if (string.IsNullOrWhiteSpace(_opt.ApiKey))
             throw new InvalidOperationException("Groq API key is not configured (Groq:ApiKey or Groq__ApiKey).");
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _opt.ApiKey.Trim());
+        using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _opt.ApiKey.Trim());
 
-        var body = new GroqChatRequest
+        var chatRequest = new GroqChatRequest
         {
             Model = string.IsNullOrWhiteSpace(_opt.Model) ? "llama-3.3-70b-versatile" : _opt.Model.Trim(),
             Temperature = 0.2,
@@ -42,21 +43,21 @@ public sealed class GroqChatService : IGroqChatService
             ResponseFormat = new GroqResponseFormat { Type = "json_object" }
         };
 
-        var json = JsonSerializer.Serialize(body, GroqJson.Serialize);
-        req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var serializedBody = JsonSerializer.Serialize(chatRequest, GroqJson.Serialize);
+        request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
 
-        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var responseText = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!resp.IsSuccessStatusCode)
+        using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+        var responseText = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("Groq API error {Status}: {Body}", (int)resp.StatusCode, responseText.Length > 500 ? responseText[..500] : responseText);
-            throw new InvalidOperationException($"Groq request failed ({(int)resp.StatusCode}).");
+            _logger.LogWarning("Groq API error {Status}: {Body}", (int)response.StatusCode, responseText.Length > 500 ? responseText[..500] : responseText);
+            throw new InvalidOperationException($"Groq request failed ({(int)response.StatusCode}).");
         }
 
-        GroqChatCompletionResponse? parsed;
+        GroqChatCompletionResponse? completion;
         try
         {
-            parsed = JsonSerializer.Deserialize<GroqChatCompletionResponse>(responseText, GroqJson.Deserialize);
+            completion = JsonSerializer.Deserialize<GroqChatCompletionResponse>(responseText, GroqJson.Deserialize);
         }
         catch (Exception ex)
         {
@@ -64,7 +65,7 @@ public sealed class GroqChatService : IGroqChatService
             throw new InvalidOperationException("Groq returned an unexpected response shape.");
         }
 
-        var content = parsed?.Choices?.FirstOrDefault()?.Message?.Content;
+        var content = completion?.Choices?.FirstOrDefault()?.Message?.Content;
         if (string.IsNullOrWhiteSpace(content))
             throw new InvalidOperationException("Groq returned empty content.");
 

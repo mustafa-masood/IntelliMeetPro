@@ -12,6 +12,15 @@ import torch  # noqa: E402
 import whisperx  # noqa: E402
 from whisperx.diarize import DiarizationPipeline  # noqa: E402
 
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
+if not HF_TOKEN:
+    raise RuntimeError("HF_TOKEN environment variable is required but not set.")
+
+DEVICE = os.environ.get("WHISPERX_DEVICE", "cuda" if torch.cuda.is_available() else "cpu")
+COMPUTE_TYPE = os.environ.get("WHISPERX_COMPUTE_TYPE", "int8")
+BATCH_SIZE = int(os.environ.get("WHISPERX_BATCH_SIZE", "16"))
+ASR_MODEL = os.environ.get("WHISPERX_MODEL", "large-v2")
+
 
 class Segment(BaseModel):
     speaker: str
@@ -29,19 +38,13 @@ class TranscriptionResponse(BaseModel):
 
 app = FastAPI()
 
-device = "cuda"           # keep it stable for now
-compute_type = "int8"    # suitable for CPU
-batch_size = 16
-
-HF_TOKEN = "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"  # same token that works in your test script
-
-print(f"Loading WhisperX ASR model on {device} ...")
-asr_model = whisperx.load_model("large-v2", device, compute_type=compute_type)
+print(f"Loading WhisperX ASR model '{ASR_MODEL}' on {DEVICE} (compute_type={COMPUTE_TYPE}) ...")
+asr_model = whisperx.load_model(ASR_MODEL, DEVICE, compute_type=COMPUTE_TYPE)
 
 print("Loading diarization model (pyannote)...")
 diarize_model = DiarizationPipeline(
     use_auth_token=HF_TOKEN,
-    device=device,
+    device=DEVICE,
 )
 
 
@@ -56,7 +59,7 @@ async def transcribe(file: UploadFile = File(...)):
         audio = whisperx.load_audio(tmp_name)
 
         # 1) ASR
-        asr_result = asr_model.transcribe(audio, batch_size=batch_size)
+        asr_result = asr_model.transcribe(audio, batch_size=BATCH_SIZE)
         language = asr_result.get("language", "en")
         duration = float(asr_result.get("duration", 0.0)) if "duration" in asr_result else 0.0
 
@@ -64,14 +67,14 @@ async def transcribe(file: UploadFile = File(...)):
         try:
             align_model, align_metadata = whisperx.load_align_model(
                 language_code=language,
-                device=device,
+                device=DEVICE,
             )
             aligned_result = whisperx.align(
                 asr_result["segments"],
                 align_model,
                 align_metadata,
                 audio,
-                device,
+                DEVICE,
             )
         except Exception:
             aligned_result = asr_result
@@ -83,7 +86,7 @@ async def transcribe(file: UploadFile = File(...)):
         except Exception:
             final_result = aligned_result
 
-        # 4) Build segments_out from final_result (final_result is ALWAYS defined now)
+        # 4) Build segments_out from final_result
         segments_out: List[Segment] = []
         for seg in final_result.get("segments", []):
             text = seg.get("text", "").strip()
@@ -102,7 +105,7 @@ async def transcribe(file: UploadFile = File(...)):
                 )
             )
 
-        # 5) Full transcript from segments_out only
+        # 5) Full transcript assembled from diarized segments
         full_text = " ".join(s.text for s in segments_out)
 
         return TranscriptionResponse(

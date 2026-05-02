@@ -3,6 +3,7 @@ using IntelliMeet.Backend.Domain.Enums;
 
 namespace IntelliMeet.Backend.Application.DTOs;
 
+
 public sealed class MeetingListItemDto
 {
     public Guid Id { get; init; }
@@ -89,10 +90,15 @@ public sealed class ActionItemDto
 public sealed class AssignTaskRequestDto
 {
     [Required]
+    [MaxLength(500)]
     public string Title { get; set; } = string.Empty;
 
+    [MaxLength(2000)]
     public string? Description { get; set; }
+
+    [MaxLength(200)]
     public string? Assignee { get; set; }
+
     public DateTimeOffset? DueDate { get; set; }
     public ActionItemPriority Priority { get; set; } = ActionItemPriority.Medium;
 }
@@ -100,5 +106,7 @@ public sealed class AssignTaskRequestDto
 public sealed class ConvertActionItemToTodoRequestDto
 {
     public Guid? UserId { get; set; }
+
+    [MaxLength(100)]
     public string? TodoType { get; set; }
 }

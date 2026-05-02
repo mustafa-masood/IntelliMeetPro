@@ -25,12 +25,14 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddExceptionHandler<AppExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5173"];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

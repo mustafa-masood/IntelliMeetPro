@@ -5,20 +5,27 @@ namespace IntelliMeet.Backend.Application.DTOs;
 
 public sealed class ConnectCalendarRequestDto
 {
+    [Required]
     public Guid UserId { get; set; }
+
     public CalendarProvider Provider { get; set; } = CalendarProvider.Google;
 
     /// <summary>Optional when server has GoogleOAuth ClientId/Secret configured.</summary>
+    [MaxLength(500)]
     public string? OAuthClientId { get; set; }
 
+    [MaxLength(500)]
     public string? OAuthClientSecret { get; set; }
 
     [Required]
+    [MaxLength(2000)]
     public string OAuthRefreshToken { get; set; } = string.Empty;
 
+    [MaxLength(200)]
     public string? OAuthTenantId { get; set; }
 
     [Required]
+    [MaxLength(500)]
     public string RawCalendarId { get; set; } = string.Empty;
 }
 
@@ -50,14 +57,19 @@ public sealed class CalendarEventDto
 public sealed class ScheduleCalendarBotRequestDto
 {
     [Required]
+    [MaxLength(200)]
     public string EventId { get; set; } = string.Empty;
 
+    [MaxLength(200)]
     public string? SeriesId { get; set; }
+
     public bool AllOccurrences { get; set; }
 
     [Required]
+    [MaxLength(200)]
     public string BotName { get; set; } = string.Empty;
 
+    [MaxLength(100)]
     public string? RecordingMode { get; set; }
 }
 

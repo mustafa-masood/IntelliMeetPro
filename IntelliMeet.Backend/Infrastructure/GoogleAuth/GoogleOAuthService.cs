@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Options;
 using Microsoft.Extensions.Options;
 

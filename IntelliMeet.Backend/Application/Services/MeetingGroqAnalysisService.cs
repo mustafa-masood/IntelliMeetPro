@@ -1,10 +1,9 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using IntelliMeet.Backend.Application.Abstractions;
+using IntelliMeet.Backend.Application.DTOs;
 using IntelliMeet.Backend.Application.Integration;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
-using IntelliMeet.Backend.Infrastructure.Groq;
 
 namespace IntelliMeet.Backend.Application.Services;
 
@@ -48,22 +47,22 @@ public sealed class MeetingGroqAnalysisService : IMeetingGroqAnalysisService
     {
         var meeting = _meetings.GetById(meetingId) ?? throw new KeyNotFoundException("Meeting not found.");
 
-        var plain = await _transcriptText.ResolvePlainTextAsync(meetingId, ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(plain))
+        var transcriptText = await _transcriptText.ResolvePlainTextAsync(meetingId, ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(transcriptText))
             throw new InvalidOperationException("No transcript text is available yet. Wait for Meeting BaaS transcription, then sync or open the meeting again.");
 
         var meetingDate = (meeting.StartUtc ?? DateTimeOffset.UtcNow).ToString("yyyy-MM-dd");
-        var system = BuildSystemPrompt(meetingDate);
-        var mbJson = await BuildMeetingBaasMetadataJsonAsync(meeting, ct).ConfigureAwait(false);
-        var user = "MEETING_BAAS_METADATA (JSON; artifact presigned URLs omitted — use only for context; spoken content is in the transcript):\n"
-                   + mbJson
-                   + "\n\nINPUT TRANSCRIPT:\n\n"
-                   + plain;
+        var systemPrompt = BuildSystemPrompt(meetingDate);
+        var meetingBaasContextJson = await BuildMeetingBaasMetadataJsonAsync(meeting, ct).ConfigureAwait(false);
+        var userContent = "MEETING_BAAS_METADATA (JSON; artifact presigned URLs omitted — use only for context; spoken content is in the transcript):\n"
+                          + meetingBaasContextJson
+                          + "\n\nINPUT TRANSCRIPT:\n\n"
+                          + transcriptText;
 
         string rawJson;
         try
         {
-            rawJson = await _groq.CompleteJsonAsync(system, user, ct).ConfigureAwait(false);
+            rawJson = await _groq.CompleteJsonAsync(systemPrompt, userContent, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -112,19 +111,19 @@ public sealed class MeetingGroqAnalysisService : IMeetingGroqAnalysisService
             .ToList();
         _keyPoints.ReplaceForMeeting(meetingId, kps);
 
-        foreach (var a in dto.ActionItems ?? new List<GroqActionItemDto>())
+        foreach (var actionItem in dto.ActionItems ?? new List<GroqActionItemDto>())
         {
-            if (string.IsNullOrWhiteSpace(a.Task))
+            if (string.IsNullOrWhiteSpace(actionItem.Task))
                 continue;
-            var due = ParseDue(a.DueDate, meetingDate);
-            var owner = string.IsNullOrWhiteSpace(a.Owner) ? null : a.Owner.Trim();
+            var due = ParseDue(actionItem.DueDate, meetingDate);
+            var owner = string.IsNullOrWhiteSpace(actionItem.Owner) ? null : actionItem.Owner.Trim();
             if (string.Equals(owner, "null", StringComparison.OrdinalIgnoreCase))
                 owner = null;
             _actionItems.Upsert(new ActionItem
             {
                 Id = Guid.NewGuid(),
                 MeetingId = meetingId,
-                Title = a.Task.Trim(),
+                Title = actionItem.Task.Trim(),
                 Description = null,
                 Owner = owner,
                 DueDate = due,
@@ -179,11 +178,11 @@ public sealed class MeetingGroqAnalysisService : IMeetingGroqAnalysisService
                         .ConfigureAwait(false);
                     if (!pageRes.Success || pageRes.Data is null)
                         break;
-                    foreach (var it in pageRes.Data.Items)
+                    foreach (var item in pageRes.Data.Items)
                     {
-                        if (string.IsNullOrWhiteSpace(it.BotId) || !seenBotIds.Add(it.BotId))
+                        if (string.IsNullOrWhiteSpace(item.BotId) || !seenBotIds.Add(item.BotId))
                             continue;
-                        v2ListBots.Add(SanitizeBotListItem(it));
+                        v2ListBots.Add(SanitizeBotListItem(item));
                         if (v2ListBots.Count >= maxListRows)
                             break;
                     }
@@ -203,11 +202,11 @@ public sealed class MeetingGroqAnalysisService : IMeetingGroqAnalysisService
                         .ConfigureAwait(false);
                     if (!pageRes.Success || pageRes.Data is null)
                         break;
-                    foreach (var it in pageRes.Data.Items)
+                    foreach (var item in pageRes.Data.Items)
                     {
-                        if (string.IsNullOrWhiteSpace(it.BotId) || !seenSchedIds.Add(it.BotId))
+                        if (string.IsNullOrWhiteSpace(item.BotId) || !seenSchedIds.Add(item.BotId))
                             continue;
-                        v2ListScheduledBots.Add(SanitizeScheduledListItem(it));
+                        v2ListScheduledBots.Add(SanitizeScheduledListItem(item));
                         if (v2ListScheduledBots.Count >= maxListRows)
                             break;
                     }
@@ -423,27 +422,4 @@ public sealed class MeetingGroqAnalysisService : IMeetingGroqAnalysisService
         AllowTrailingCommas = true
     };
 
-    private sealed class GroqAnalysisDto
-    {
-        [JsonPropertyName("summary")]
-        public string? Summary { get; set; }
-
-        [JsonPropertyName("keyPoints")]
-        public List<string>? KeyPoints { get; set; }
-
-        [JsonPropertyName("actionItems")]
-        public List<GroqActionItemDto>? ActionItems { get; set; }
-    }
-
-    private sealed class GroqActionItemDto
-    {
-        [JsonPropertyName("owner")]
-        public string? Owner { get; set; }
-
-        [JsonPropertyName("task")]
-        public string? Task { get; set; }
-
-        [JsonPropertyName("dueDate")]
-        public string? DueDate { get; set; }
-    }
 }

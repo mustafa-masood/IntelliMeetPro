@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using IntelliMeet.Backend.Infrastructure.GoogleAuth;
+using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Options;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;

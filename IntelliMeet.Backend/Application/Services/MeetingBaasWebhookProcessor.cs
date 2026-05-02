@@ -1,5 +1,6 @@
 using System.Text.Json;
 using IntelliMeet.Backend.Application.Abstractions;
+using IntelliMeet.Backend.Application.Utilities;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
 
@@ -210,9 +211,9 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
             };
             _artifacts.ApplyFromBotDetails(meetingId, fake);
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore */
+            _logger.LogDebug(ex, "Artifact extraction from webhook JSON failed for meeting {MeetingId}", meetingId);
         }
     }
 
@@ -251,8 +252,8 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         var now = DateTimeOffset.UtcNow;
         var existing = _events.FindByExternal(connectionId, extId!);
         var id = existing?.Id ?? Guid.NewGuid();
-        var start = ParseDate(ReadString(el, "start")) ?? existing?.StartUtc ?? now;
-        var end = ParseDate(ReadString(el, "end")) ?? existing?.EndUtc ?? start.AddHours(1);
+        var start = DateTimeUtils.TryParseIso(ReadString(el, "start")) ?? existing?.StartUtc ?? now;
+        var end = DateTimeUtils.TryParseIso(ReadString(el, "end")) ?? existing?.EndUtc ?? start.AddHours(1);
         var evt = new CalendarEvent
         {
             Id = id,
@@ -292,9 +293,9 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
             existing.UpdatedAt = DateTimeOffset.UtcNow;
             _events.Upsert(existing);
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore */
+            _logger.LogWarning(ex, "Failed to process calendar.event.cancelled payload");
         }
     }
 
@@ -312,13 +313,13 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
             if (conn is null)
                 return;
             conn.UpdatedAt = DateTimeOffset.UtcNow;
-            if (ReadString(data, "status") is { } st)
-                conn.Status = st;
+            if (ReadString(data, "status") is { } status)
+                conn.Status = status;
             _calendars.Upsert(conn);
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore */
+            _logger.LogWarning(ex, "Failed to process calendar.connection webhook payload");
         }
     }
 
@@ -337,6 +338,4 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         };
     }
 
-    private static DateTimeOffset? ParseDate(string? iso) =>
-        string.IsNullOrWhiteSpace(iso) ? null : DateTimeOffset.TryParse(iso, out var d) ? d : null;
 }
