@@ -668,17 +668,17 @@ const Meetings: React.FC = () => {
                         <div className="flex flex-col gap-4 sm:gap-6">
                             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
                                 <div className="flex-1 w-full sm:w-auto">
-                                    <p className="text-[11px] font-inter font-medium uppercase tracking-wider text-text-tertiary m-0 mb-1">
+                                    {/* <p className="text-[11px] font-inter font-medium uppercase tracking-wider text-text-tertiary m-0 mb-1">
                                         Meeting BaaS · Bots & recordings
-                                    </p>
+                                    </p> */}
                                     <h1 className="font-inter-tight font-medium text-xl sm:text-2xl leading-8 text-text-primary m-0">
                                         My Meetings
                                     </h1>
-                                    <p className="text-sm text-text-secondary font-inter m-0 mt-1 max-w-lg">
+                                    {/* <p className="text-sm text-text-secondary font-inter m-0 mt-1 max-w-lg">
                                         Live bots via <code className="text-xs bg-bg-surface-lv1 px-1 rounded">POST /v2/bots</code>, scheduled
                                         bots from Calendar, transcripts from{' '}
                                         <code className="text-xs bg-bg-surface-lv1 px-1 rounded">/v2/transcription</code>.
-                                    </p>
+                                    </p> */}
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center w-full sm:w-auto relative">
                                     <button
@@ -747,7 +747,7 @@ const Meetings: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                                <button
+                                {/* <button
                                     onClick={() => {
                                         setShowUploadFilesView(!showUploadFilesView);
                                         setShowAllMeetings(!showAllMeetings);
@@ -760,7 +760,7 @@ const Meetings: React.FC = () => {
                                 >
 
                                     <span>Show Uploaded Files</span>
-                                </button>
+                                </button> */}
                             </div>
 
 

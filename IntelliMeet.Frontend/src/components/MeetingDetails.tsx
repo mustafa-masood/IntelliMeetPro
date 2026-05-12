@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
-import TeamCreationSidebar from './TeamCreationSidebar';
+// import TeamCreationSidebar from './TeamCreationSidebar';
 import type { MeetingDetailsProps, PmPlatform } from '../types';
 import { Link } from 'react-router-dom';
 import MeetingAskAI from './MeetingAskAI';
@@ -661,7 +661,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                 </div>
             </div>
 
-            <TeamCreationSidebar />
+            {/* <TeamCreationSidebar /> */}
         </div>
     );
 };
