@@ -1,5 +1,5 @@
 import React from 'react';
-// import SearchBar from '../SearchBar';
+import SearchBar from '../SearchBar';
 
 interface PageHeaderProps {
   title: string;
@@ -27,11 +27,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
           )}
         </div>
-        {/* {showSearch && (
+        {showSearch && (
           <div className="w-full max-w-xl">
             <SearchBar className="w-full" />
           </div>
-        )} */}
+        )}
       </div>
     </header>
   );

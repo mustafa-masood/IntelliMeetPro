@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-// import SearchBar from './SearchBar';
+import SearchBar from './SearchBar';
 
 interface Invoice {
   id: string;
@@ -29,9 +29,9 @@ const PlanBilling: React.FC = () => {
 
       <div className="ml-0 md:ml-[270px] flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
         {/* Topbar */}
-        {/* <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card shrink-0 z-100">
+        <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card shrink-0 z-100">
           <SearchBar />
-        </div> */}
+        </div>
 
         {/* Page Header */}
         <div className="px-8 pt-[10px] flex items-center gap-3 shrink-0">
