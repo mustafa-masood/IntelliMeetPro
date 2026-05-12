@@ -569,7 +569,7 @@ const Meetings: React.FC = () => {
         if (!selectedAnalysisResult.analysis || !selectedAnalysisResult.transcript) {
             console.error('Invalid analysis result structure:', selectedAnalysisResult);
             return (
-                <div className="flex min-h-[100dvh] w-full max-w-full bg-bg-surface-lv1 overflow-x-hidden overflow-y-auto items-center justify-center p-4">
+                <div className="flex min-h-[100dvh] w-full max-w-full im-app-canvas overflow-x-hidden overflow-y-auto items-center justify-center p-4">
                     <div className="text-text-primary">Error: Invalid meeting data. Please try again.</div>
                 </div>
             );
@@ -621,7 +621,7 @@ const Meetings: React.FC = () => {
     }
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full im-app-canvas overflow-hidden">
             <MobileMenuButton
                 isOpen={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -633,7 +633,7 @@ const Meetings: React.FC = () => {
             />
 
             <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary min-h-16 flex flex-wrap items-center gap-3 px-7 sm:px-7 py-2 shrink-0">
+                <div className="bg-bg-surface-alpha-90 backdrop-blur-xl border-b border-stroke-primary min-h-16 flex flex-wrap items-center gap-3 px-7 sm:px-7 py-2 shrink-0 shadow-card ring-1 ring-black/[0.02] dark:ring-white/[0.05] z-10">
                     <SearchBar placeholder="Search meetings…" className="sm:w-64" />
                     {usageSummary && (
                         <div className="flex flex-wrap gap-2 text-[11px] text-text-secondary font-inter shrink-0">
@@ -768,7 +768,7 @@ const Meetings: React.FC = () => {
 
                         <div className="flex flex-col gap-4 relative min-h-[400px]">
                             {showUploadFilesView ? (
-                                <div className="bg-bg-surface-pure rounded-12 shadow-card flex flex-col overflow-hidden relative z-0 min-h-[400px] overflow-y-auto">
+                                <div className="bg-bg-surface-pure rounded-12 shadow-elevated ring-1 ring-stroke-primary/60 flex flex-col overflow-hidden relative z-0 min-h-[400px] overflow-y-auto motion-safe:transition-shadow motion-safe:duration-300">
                                     <div className="flex flex-col">
                                         <div className="flex bg-bg-surface-lv2 border-b border-stroke-primary">
                                             <div className="px-3 h-10 flex items-center font-inter font-normal text-sm text-text-secondary w-[517px] rounded-tl-12">

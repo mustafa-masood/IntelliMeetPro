@@ -15,7 +15,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   className = '' 
 }) => {
   return (
-    <header className={`bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary sticky top-0 z-[100] shadow-card ${className}`}>
+    <header className={`bg-bg-surface-alpha-90 backdrop-blur-xl border-b border-stroke-primary sticky top-0 z-[100] shadow-card ring-1 ring-black/[0.03] dark:ring-white/[0.06] transition-shadow duration-300 ${className}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex-1 w-full sm:w-auto">
           {showSearch && <SearchBar className="w-full sm:w-auto" />}
