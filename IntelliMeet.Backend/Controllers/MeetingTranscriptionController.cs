@@ -2,11 +2,15 @@ using IntelliMeet.Backend.Models;
 using IntelliMeet.Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IntelliMeet.Backend.Controllers;
+namespace IntelliMeet.Backend.Controllers.Experimental;
 
-/// <summary>Legacy WhisperX + Ollama analysis endpoints (file upload). Kept for existing frontend.</summary>
+/// <summary>
+/// Experimental legacy path for manual file-upload analysis.
+/// Deferred from the core MeetingBaaS + calendar + transcript pipeline.
+/// </summary>
 [ApiController]
-[Route("api/meetings")]
+[ApiExplorerSettings(IgnoreApi = true)]
+[Route("api/experimental/meetings-transcription")]
 public class MeetingTranscriptionController : ControllerBase
 {
     private readonly ITranscriptionService _transcriptionService;

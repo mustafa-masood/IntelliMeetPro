@@ -1,6 +1,8 @@
+using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Application.DTOs;
 using IntelliMeet.Backend.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace IntelliMeet.Backend.Controllers;
 
@@ -9,12 +11,17 @@ namespace IntelliMeet.Backend.Controllers;
 public class MeetingsApiController : ControllerBase
 {
     private readonly IMeetingsApiService _meetings;
-    private readonly IMeetingGroqAnalysisService _groqAnalysis;
+    private readonly IMeetingRepository _meetingRepository;
+    private readonly IMeetingAnalysisQueue _analysisQueue;
 
-    public MeetingsApiController(IMeetingsApiService meetings, IMeetingGroqAnalysisService groqAnalysis)
+    public MeetingsApiController(
+        IMeetingsApiService meetings,
+        IMeetingRepository meetingRepository,
+        IMeetingAnalysisQueue analysisQueue)
     {
         _meetings = meetings;
-        _groqAnalysis = groqAnalysis;
+        _meetingRepository = meetingRepository;
+        _analysisQueue = analysisQueue;
     }
 
     [HttpGet]
@@ -65,14 +72,17 @@ public class MeetingsApiController : ControllerBase
         return Ok(a);
     }
 
-    /// <summary>Resolves transcript (including Meeting BaaS artifact URLs), runs Groq JSON analysis, persists summary / key points / action items.</summary>
-    [HttpPost("{id:guid}/groq-analyze")]
-    public async Task<IActionResult> GroqAnalyze(Guid id, CancellationToken ct)
+    [HttpPost("{id:guid}/action-items/{actionItemId:guid}/assign-user")]
+    public async Task<ActionResult<ActionItemDto>> AssignActionItemUser(
+        Guid id,
+        Guid actionItemId,
+        [FromBody] AssignActionItemUserRequestDto body,
+        CancellationToken ct)
     {
         try
         {
-            await _groqAnalysis.AnalyzeAndPersistAsync(id, ct).ConfigureAwait(false);
-            return Ok(new { ok = true });
+            var a = await _meetings.AssignActionItemUserAsync(id, actionItemId, body, ct).ConfigureAwait(false);
+            return Ok(a);
         }
         catch (KeyNotFoundException)
         {
@@ -80,7 +90,21 @@ public class MeetingsApiController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { success = false, error = ex.Message });
+            return BadRequest(ex.Message);
         }
+    }
+
+    /// <summary>Resolves transcript (including Meeting BaaS artifact URLs), runs Ollama JSON analysis, persists summary / key points / action items. Work is queued so this endpoint returns immediately.</summary>
+    [HttpPost("{id:guid}/analyze")]
+    public async Task<IActionResult> Analyze(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] AnalyzeMeetingRequestDto? body,
+        CancellationToken ct)
+    {
+        if (_meetingRepository.GetById(id) is null)
+            return NotFound();
+
+        await _analysisQueue.EnqueueAsync(id, body?.Force ?? false, ct).ConfigureAwait(false);
+        return Ok(new { ok = true, status = "queued" });
     }
 }

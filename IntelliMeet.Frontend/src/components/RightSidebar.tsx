@@ -192,7 +192,9 @@ const RightSidebar: React.FC = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-inter font-medium text-sm text-text-primary tracking-[-0.176px] leading-5">Paste meeting link</div>
-            <div className="font-inter font-normal text-xs text-text-secondary leading-4">Invite notetaker via Meeting BaaS</div>
+            <div className="font-inter font-normal text-xs text-text-secondary leading-4">
+                Invite IntelliMeet Pro Notetaker via Meeting BaaS
+            </div>
           </div>
         </div>
         <div className="p-3 flex flex-col gap-2.5">
@@ -211,7 +213,7 @@ const RightSidebar: React.FC = () => {
               setJoinBusy(true);
               setJoinMsg(null);
               try {
-                const r = await imApi.joinBot(joinUrl.trim(), 'IntelliMeet Notetaker');
+                const r = await imApi.joinBot(joinUrl.trim());
                 setJoinMsg(`Bot queued. ID: ${r.externalBotId.slice(0, 8)}…`);
                 setJoinUrl('');
                 const u = await imApi.upcomingMeetings();

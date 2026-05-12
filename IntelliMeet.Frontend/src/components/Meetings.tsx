@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MeetingDetails from './MeetingDetails';
 import MobileMenuButton from './MobileMenuButton';
 import MeetingsTable from './MeetingsTable';
 import Container from './layout/Container';
 import SearchBar from './SearchBar';
-import type { MeetingAnalysisResponse, Meeting as MeetingType, ApiActionItemRow } from '../types';
-import { imApi } from '../api/intellimeet';
+import type { MeetingAnalysisResponse, Meeting as MeetingType, ApiActionItemRow, PmPlatform } from '../types';
+import { DEMO_USER_ID } from '../config/demoUser';
+import { isClerkConfigured } from '../config/clerk';
+import { imApi, type ActionItemDto, type MeetingBotSummaryDto, type WorkspaceSummary, type UsageSummaryDto } from '../api/intellimeet';
+import { getMeetingDetailCached, invalidateMeetingDetailCache } from '../lib/meetingDetailCache';
+import { waitForMeetingNotAnalyzing } from '../lib/meetingAnalysisPoll';
 
 interface Meeting {
     id: string;
@@ -20,6 +25,22 @@ interface Meeting {
 }
 
 const EMPTY_MEETING_ID = '00000000-0000-0000-0000-000000000000';
+
+function mapActionItemToRow(a: ActionItemDto): ApiActionItemRow {
+    return {
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        owner: a.owner,
+        dueDate: a.dueDate != null ? String(a.dueDate) : null,
+        addToTodoChecked: a.addToTodoChecked,
+        externalTaskUrl: a.externalTaskUrl,
+        syncedPlatform: a.syncedPlatform ?? undefined,
+        assignedUserId: a.assignedUserId ?? null,
+        suggestedAssigneeName: a.suggestedAssigneeName ?? null,
+        suggestedAssigneeConfidence: a.suggestedAssigneeConfidence ?? null,
+    };
+}
 
 function formatApiMeetingDate(iso?: string | null): string {
     if (!iso) return '—';
@@ -37,6 +58,7 @@ function formatApiMeetingDate(iso?: string | null): string {
 }
 
 const Meetings: React.FC = () => {
+    const navigate = useNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -62,10 +84,18 @@ const Meetings: React.FC = () => {
     const [apiDetailMeta, setApiDetailMeta] = useState<{
         meetingUrl: string | null;
         platform: string | null;
-        bots: { id: string; externalBotId: string; status: number; transcriptionStatus: number }[];
+        bots: MeetingBotSummaryDto[];
+        processingStatus: number;
+        transcriptAnalysisCompleted: boolean;
+        analysisError: string | null;
+        lifecycleStatusLabel?: string | null;
+        processingStatusLabel?: string | null;
     } | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [meetingsListHint, setMeetingsListHint] = useState<string | null>(null);
+    const [myBackendUserId, setMyBackendUserId] = useState<string | null>(null);
+    const [workspaceSummary, setWorkspaceSummary] = useState<WorkspaceSummary | null>(null);
+    const [usageSummary, setUsageSummary] = useState<UsageSummaryDto | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -73,6 +103,39 @@ const Meetings: React.FC = () => {
     const successModalRef = useRef<HTMLDivElement>(null);
     const scheduleModalRef = useRef<HTMLDivElement>(null);
     const uploadModalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isClerkConfigured()) return;
+        let cancelled = false;
+        void (async () => {
+            try {
+                const s = await imApi.onboardingMe();
+                if (!cancelled) {
+                    if (s.userId) setMyBackendUserId(s.userId);
+                    if (s.needsPlanSelection) navigate('/onboarding/plan', { replace: true });
+                }
+            } catch {
+                /* not signed in or backend unreachable */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [navigate]);
+
+    useEffect(() => {
+        if (!isClerkConfigured()) return;
+        let cancelled = false;
+        void imApi
+            .billingUsageSummary()
+            .then((u) => {
+                if (!cancelled) setUsageSummary(u);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Mock uploaded files data
     interface UploadedFile {
@@ -132,7 +195,7 @@ const Meetings: React.FC = () => {
             }
             setApiMeetings([...fromCal, ...apiRows]);
         } catch {
-            setApiMeetings([]);
+            /* Keep apiMeetings: clearing on transient errors made the table look empty. */
         }
     }, []);
 
@@ -283,66 +346,81 @@ const Meetings: React.FC = () => {
         setSelectedMeeting(meeting);
         setDetailSource('api');
         setApiMeetingId(meeting.id);
+        setWorkspaceSummary(null);
+        void imApi
+            .getWorkspace()
+            .then(setWorkspaceSummary)
+            .catch(() => setWorkspaceSummary(null));
         setApiDetailMeta(null);
         try {
             // Load meeting first so backend syncs Meeting BaaS bot details + artifact URLs before transcript fetch (avoids race).
-            const detail = await imApi.getMeeting(meeting.id);
-            const [transcript, summary, actions] = await Promise.all([
-                imApi.getTranscript(meeting.id),
-                imApi.getSummary(meeting.id),
-                imApi.getActionItems(meeting.id),
-            ]);
+            const detail = await getMeetingDetailCached(meeting.id);
+            const transcript = detail.transcript;
+            const summary = detail.summary;
+            const actions = detail.actionItems ?? [];
             setApiDetailMeta({
                 meetingUrl: detail.meetingUrl ?? null,
                 platform: detail.platform ?? null,
                 bots: detail.bots ?? [],
+                processingStatus: detail.processingStatus ?? 0,
+                transcriptAnalysisCompleted: detail.transcriptAnalysisCompleted ?? false,
+                analysisError: detail.analysisError ?? null,
+                lifecycleStatusLabel: detail.lifecycleStatusLabel ?? null,
+                processingStatusLabel: detail.processingStatusLabel ?? null,
             });
             setAudioPlaybackUrl(detail.audioPlaybackUrl ?? null);
 
             const hasTranscriptBody =
                 (transcript.rawText && transcript.rawText.trim().length > 0) ||
                 (transcript.segments && transcript.segments.length > 0);
-            const hasTranscriptSource =
-                hasTranscriptBody ||
-                !!(transcript.externalTranscriptionUrl && transcript.externalTranscriptionUrl.trim()) ||
-                !!(transcript.externalRawTranscriptionUrl && transcript.externalRawTranscriptionUrl.trim());
-            /** Run Groq whenever we can resolve text or have segments/URL — do not require meeting "Completed" (status 3). */
-            const runGroq = hasTranscriptSource;
+            /** Only enqueue Ollama when plain text exists; URLs alone still return “transcript not ready” from the worker. */
+            const needsAnalysis =
+                hasTranscriptBody &&
+                (!detail.transcriptAnalysisCompleted || detail.processingStatus === 5);
+            const runAnalyze = needsAnalysis;
 
             let finalSummary = summary;
             let finalActions = actions;
             let transcriptForUi = transcript;
-            if (runGroq) {
+            if (runAnalyze) {
                 try {
-                    await imApi.groqAnalyzeMeeting(meeting.id);
-                    const [t2, s2, a2] = await Promise.all([
-                        imApi.getTranscript(meeting.id),
-                        imApi.getSummary(meeting.id),
-                        imApi.getActionItems(meeting.id),
-                    ]);
-                    transcriptForUi = t2;
-                    finalSummary = s2;
-                    finalActions = a2;
+                    invalidateMeetingDetailCache(meeting.id);
+                    await imApi.analyzeMeeting(meeting.id, false);
+                    const d2 = await waitForMeetingNotAnalyzing(meeting.id);
+                    invalidateMeetingDetailCache(meeting.id);
+                    transcriptForUi = d2.transcript;
+                    finalSummary = d2.summary;
+                    finalActions = d2.actionItems ?? [];
+                    setApiDetailMeta({
+                        meetingUrl: d2.meetingUrl ?? null,
+                        platform: d2.platform ?? null,
+                        bots: d2.bots ?? [],
+                        processingStatus: d2.processingStatus ?? 0,
+                        transcriptAnalysisCompleted: d2.transcriptAnalysisCompleted ?? false,
+                        analysisError: d2.analysisError ?? null,
+                        lifecycleStatusLabel: d2.lifecycleStatusLabel ?? null,
+                        processingStatusLabel: d2.processingStatusLabel ?? null,
+                    });
+                    setAudioPlaybackUrl(d2.audioPlaybackUrl ?? null);
                 } catch {
-                    /* Groq optional: show transcript without AI refresh */
+                    /* Ollama optional: show transcript without AI refresh */
                 }
             }
 
-            setApiActionItems(
-                finalActions.map((a) => ({
-                    id: a.id,
-                    title: a.title,
-                    description: a.description,
-                    owner: a.owner,
-                    dueDate: a.dueDate != null ? String(a.dueDate) : null,
-                    addToTodoChecked: a.addToTodoChecked,
-                }))
-            );
+            const priorityLabel = (p: number) =>
+                p === 0 ? 'Low' : p === 2 ? 'High' : 'Medium';
+
+            setApiActionItems(finalActions.map(mapActionItemToRow));
             setSelectedAnalysisResult({
                 analysis: {
                     summary: finalSummary.shortSummary || `Meeting: ${meeting.name}`,
                     keyPoints: Array.isArray(finalSummary.keyPoints) ? finalSummary.keyPoints : [],
-                    actionItems: [],
+                    actionItems: finalActions.map((a) => ({
+                        description: a.title + (a.description ? ` — ${a.description}` : ''),
+                        owner: a.owner ?? '',
+                        dueDate: a.dueDate != null ? String(a.dueDate) : null,
+                        priority: priorityLabel(a.priority),
+                    })),
                     keyTakeaways: [],
                 },
                 transcript: {
@@ -378,27 +456,23 @@ const Meetings: React.FC = () => {
         const refresh = async () => {
             try {
                 const detail = await imApi.getMeeting(apiMeetingId);
-                const [transcript, summary, actions] = await Promise.all([
-                    imApi.getTranscript(apiMeetingId),
-                    imApi.getSummary(apiMeetingId),
-                    imApi.getActionItems(apiMeetingId),
-                ]);
+                const transcript = detail.transcript;
+                const summary = detail.summary;
+                const actions = detail.actionItems ?? [];
                 setApiDetailMeta({
                     meetingUrl: detail.meetingUrl ?? null,
                     platform: detail.platform ?? null,
                     bots: detail.bots ?? [],
+                    processingStatus: detail.processingStatus ?? 0,
+                    transcriptAnalysisCompleted: detail.transcriptAnalysisCompleted ?? false,
+                    analysisError: detail.analysisError ?? null,
+                    lifecycleStatusLabel: detail.lifecycleStatusLabel ?? null,
+                    processingStatusLabel: detail.processingStatusLabel ?? null,
                 });
                 setAudioPlaybackUrl(detail.audioPlaybackUrl ?? null);
-                setApiActionItems(
-                    actions.map((a) => ({
-                        id: a.id,
-                        title: a.title,
-                        description: a.description,
-                        owner: a.owner,
-                        dueDate: a.dueDate != null ? String(a.dueDate) : null,
-                        addToTodoChecked: a.addToTodoChecked,
-                    }))
-                );
+                setApiActionItems(actions.map(mapActionItemToRow));
+                const priorityLabel = (p: number) =>
+                    p === 0 ? 'Low' : p === 2 ? 'High' : 'Medium';
                 setSelectedAnalysisResult((prev) => {
                     if (!prev) return prev;
                     return {
@@ -407,6 +481,12 @@ const Meetings: React.FC = () => {
                             ...prev.analysis,
                             summary: summary.shortSummary?.trim() || prev.analysis.summary,
                             keyPoints: Array.isArray(summary.keyPoints) ? summary.keyPoints : prev.analysis.keyPoints,
+                            actionItems: actions.map((a) => ({
+                                description: a.title + (a.description ? ` — ${a.description}` : ''),
+                                owner: a.owner ?? '',
+                                dueDate: a.dueDate != null ? String(a.dueDate) : null,
+                                priority: priorityLabel(a.priority),
+                            })),
                         },
                         transcript: {
                             fullText: transcript.rawText || '',
@@ -424,7 +504,7 @@ const Meetings: React.FC = () => {
             }
         };
 
-        const id = window.setInterval(refresh, 12000);
+        const id = window.setInterval(refresh, 25_000);
         return () => window.clearInterval(id);
     }, [apiMeetingId, detailSource, selectedMeeting]);
 
@@ -457,22 +537,30 @@ const Meetings: React.FC = () => {
         setApiDetailMeta(null);
         setApiActionItems([]);
         setAudioPlaybackUrl(null);
+        setWorkspaceSummary(null);
+    };
+
+    const handleAssignActionItemUser = async (actionItemId: string, assignedUserId: string | null) => {
+        if (!apiMeetingId) return;
+        await imApi.assignActionItemUser(apiMeetingId, actionItemId, assignedUserId);
+        const actions = await imApi.getActionItems(apiMeetingId);
+        setApiActionItems(actions.map(mapActionItemToRow));
     };
 
     const handleConvertActionToTodo = async (actionItemId: string) => {
         if (!apiMeetingId) return;
         await imApi.convertActionToTodo(apiMeetingId, actionItemId);
         const actions = await imApi.getActionItems(apiMeetingId);
-        setApiActionItems(
-            actions.map((a) => ({
-                id: a.id,
-                title: a.title,
-                description: a.description,
-                owner: a.owner,
-                dueDate: a.dueDate != null ? String(a.dueDate) : null,
-                addToTodoChecked: a.addToTodoChecked,
-            }))
-        );
+        setApiActionItems(actions.map(mapActionItemToRow));
+    };
+
+    const handlePushActionToPm = async (actionItemId: string, platform: PmPlatform) => {
+        if (!apiMeetingId) return;
+        if (platform === 1) await imApi.pushActionToAsana(apiMeetingId, actionItemId);
+        else if (platform === 2) await imApi.pushActionToJira(apiMeetingId, actionItemId);
+        else await imApi.pushActionToTrello(apiMeetingId, actionItemId);
+        const actions = await imApi.getActionItems(apiMeetingId);
+        setApiActionItems(actions.map(mapActionItemToRow));
     };
 
     // If a meeting is selected and we have analysis data, show the details page
@@ -481,11 +569,14 @@ const Meetings: React.FC = () => {
         if (!selectedAnalysisResult.analysis || !selectedAnalysisResult.transcript) {
             console.error('Invalid analysis result structure:', selectedAnalysisResult);
             return (
-                <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden items-center justify-center">
+                <div className="flex min-h-[100dvh] w-full max-w-full bg-bg-surface-lv1 overflow-x-hidden overflow-y-auto items-center justify-center p-4">
                     <div className="text-text-primary">Error: Invalid meeting data. Please try again.</div>
                 </div>
             );
         }
+
+        const meMember = workspaceSummary?.members.find((m) => m.userId === (myBackendUserId ?? DEMO_USER_ID));
+        const canAssignActionItems = meMember?.role === 0;
 
         return (
             <MeetingDetails
@@ -504,12 +595,33 @@ const Meetings: React.FC = () => {
                 meetingUrl={detailSource === 'api' ? apiDetailMeta?.meetingUrl ?? null : null}
                 meetingPlatform={detailSource === 'api' ? apiDetailMeta?.platform ?? null : null}
                 meetingBots={detailSource === 'api' ? apiDetailMeta?.bots ?? null : null}
+                meetingProcessingStatus={detailSource === 'api' ? apiDetailMeta?.processingStatus ?? null : null}
+                meetingAnalysisError={detailSource === 'api' ? apiDetailMeta?.analysisError ?? null : null}
+                meetingTranscriptAnalysisCompleted={
+                    detailSource === 'api' ? apiDetailMeta?.transcriptAnalysisCompleted ?? null : null
+                }
+                meetingLifecycleStatusLabel={detailSource === 'api' ? apiDetailMeta?.lifecycleStatusLabel ?? null : null}
+                meetingProcessingStatusLabel={detailSource === 'api' ? apiDetailMeta?.processingStatusLabel ?? null : null}
+                onPushActionToPm={detailSource === 'api' && apiMeetingId ? handlePushActionToPm : undefined}
+                workspaceMembersForAssign={
+                    detailSource === 'api' && workspaceSummary
+                        ? workspaceSummary.members.map((m) => ({
+                              userId: m.userId,
+                              displayName: m.displayName,
+                              email: m.email,
+                          }))
+                        : null
+                }
+                canAssignActionItems={detailSource === 'api' ? canAssignActionItems : false}
+                onAssignActionItemUser={
+                    detailSource === 'api' && apiMeetingId && canAssignActionItems ? handleAssignActionItemUser : undefined
+                }
             />
         );
     }
 
     return (
-        <div className=" flex min-h-screen bg-bg-surface-lv1">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
             <MobileMenuButton
                 isOpen={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -520,12 +632,26 @@ const Meetings: React.FC = () => {
                 onMobileClose={() => setIsMobileMenuOpen(false)}
             />
 
-            <main className=" flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-16 flex items-center px-7 sm:px-7">
+            <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary min-h-16 flex flex-wrap items-center gap-3 px-7 sm:px-7 py-2 shrink-0">
                     <SearchBar placeholder="Search meetings…" className="sm:w-64" />
+                    {usageSummary && (
+                        <div className="flex flex-wrap gap-2 text-[11px] text-text-secondary font-inter shrink-0">
+                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                                Plan:{' '}
+                                <span className="font-medium text-text-primary">{usageSummary.currentPlan}</span>
+                            </span>
+                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                                Meetings: {usageSummary.meetingsThisMonth}/{usageSummary.meetingsLimit}
+                            </span>
+                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                                Chat: {usageSummary.chatThisMonth}/{usageSummary.chatLimit}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                <div className=" flex-1 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <Container className="py-2 sm:py-2 lg:py-2">
                         {meetingsListHint && (
                             <div className="mb-3 rounded-8 border border-stroke-primary bg-bg-surface-pure px-3 py-2 text-sm text-text-secondary font-inter">
@@ -843,7 +969,10 @@ const Meetings: React.FC = () => {
                                     setLiveJoinBusy(true);
                                     setLiveJoinError(null);
                                     try {
-                                        await imApi.joinBot(liveLink.trim(), liveName.trim() || 'IntelliMeet Notetaker');
+                                        await imApi.joinBot(
+                                            liveLink.trim(),
+                                            liveName.trim() ? liveName.trim() : undefined
+                                        );
                                         setIsModalOpen(false);
                                         setLiveLink('');
                                         setLiveName('');
@@ -911,12 +1040,12 @@ const Meetings: React.FC = () => {
 
                         {/* Title */}
                         <p className="font-inter-tight font-medium text-2xl leading-8 text-text-primary text-center w-[354px] m-0">
-                            IntelliMeet assistant has been invited to the meeting
+                            IntelliMeet Pro Notetaker has been invited to the meeting
                         </p>
 
                         {/* Description */}
                         <p className="font-inter font-normal text-base leading-6 text-text-secondary tracking-[-0.176px] text-center w-[354px] m-0">
-                            Once joined, IntelliMeet notetaker assistant will automatically start taking notes.
+                            Once joined, IntelliMeet Pro Notetaker will automatically start taking notes.
                         </p>
 
                         {/* Open Meeting Button */}
@@ -982,7 +1111,7 @@ const Meetings: React.FC = () => {
                         </div>
 
                         <p className="font-inter font-normal leading-6 not-italic relative shrink-0 text-base text-text-secondary tracking-[-0.176px] w-full whitespace-pre-wrap m-0">
-                            Your AI Notetaker will be invited to the calendar meeting to record, transcribe and summarize.
+                            IntelliMeet Pro Notetaker will be invited to the calendar meeting to record, transcribe and summarize.
                         </p>
 
                         <div className="content-stretch flex flex-col gap-3 items-start relative shrink-0 w-full">

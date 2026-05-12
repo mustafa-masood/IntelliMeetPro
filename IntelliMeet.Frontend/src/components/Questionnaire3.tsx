@@ -26,16 +26,16 @@ const Questionnaire3: React.FC = () => {
 
     const handleNext = () => {
         if (selectedOptions.length > 0) {
-            navigate('/signup/pricing');
+            navigate('/deferred/signup/pricing');
         }
     };
 
     const handleBack = () => {
-        navigate('/signup/questionnaire-2');
+            navigate('/onboarding/questionnaire-2');
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure items-center justify-center">
+        <div className="flex min-h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto bg-bg-surface-pure items-center justify-center p-6">
             <div className="w-full max-w-[800px] flex flex-col gap-6 items-center p-6">
                 
                 {/* Logo */}

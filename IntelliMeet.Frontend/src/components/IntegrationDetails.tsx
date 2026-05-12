@@ -12,36 +12,32 @@ const IntegrationDetails: React.FC = () => {
     const [createAITasks, setCreateAITasks] = useState(true);
     const [autoAssignTasks, setAutoAssignTasks] = useState(true);
 
-    // Mock integration data - in a real app, this would come from an API based on integrationId
+    // TODO(Mustafa): remove legacy integration metadata; keep record so old deep links stay compilable.
     const integrations: Record<string, { name: string; description: string; status: string; icon: string }> = {
-        '1': { name: 'Zoom Integrations', description: 'Join your work meeting on Zoom and automatically transcribe and summarize.', status: 'active', icon: 'Z' },
-        '2': { name: 'Microsoft Teams Integrations', description: 'Join your work meeting on Teams and automatically transcribe and summarize.', status: 'active', icon: 'T' },
-        '3': { name: 'Google Meet Integrations', description: 'Join your work meeting on Meet and automatically transcribe and summarize.', status: 'active', icon: 'G' },
         '4': { name: 'Slack Integrations', description: 'Seamless integration designed to unify processes and reduce manual effort.', status: 'active', icon: 'S' },
         '5': { name: 'Google Calendar Integrations', description: 'Connect your platform with calendar to join automatically and save time.', status: 'active', icon: 'C' },
-        '6': { name: 'Gmail Integrations', description: 'Simplify your work with integrations that bring all your tools into one place.', status: 'active', icon: 'G' },
         '7': { name: 'Asana Integrations', description: 'Unlock the power of automation with smart integrations for your team.', status: 'active', icon: 'A' },
         '8': { name: 'Jira Integrations', description: 'Create tasks in Jira from AI assisted meeting action items or using voice commands.', status: 'active', icon: 'J' },
         '9': { name: 'Trello Integrations', description: 'Enhance connectivity and achieve more with integrations that work seamlessly.', status: 'active', icon: 'T' },
     };
 
-    const integration = integrationId ? integrations[integrationId] || integrations['8'] : integrations['8'];
+    const integration = integrationId ? integrations[integrationId] || integrations['7'] : integrations['7'];
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
             <Sidebar />
 
-            <div className="ml-[270px] flex-1 flex flex-col h-screen overflow-hidden relative">
+            <div className="ml-0 md:ml-[270px] flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
                 {/* Topbar */}
-                <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-100">
+                <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card shrink-0 z-100">
                     <SearchBar />
                 </div>
 
                 {/* Page Header */}
-                <div className="px-8 pt-[10px] flex flex-col gap-4 max-w-[1106px] w-full mx-auto">
+                <div className="px-8 pt-[10px] flex flex-col gap-4 max-w-[1106px] w-full mx-auto shrink-0">
                     <div className="flex gap-3 items-center w-full">
                         <button
-                            onClick={() => navigate('/app-integrations')}
+                            onClick={() => navigate('/deferred/app-integrations')}
                             className="p-1 hover:bg-bg-surface-lv1 rounded-4 transition-colors bg-transparent border-none cursor-pointer"
                         >
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -57,7 +53,7 @@ const IntegrationDetails: React.FC = () => {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-y-auto px-8 py-4 max-w-[1106px] w-full mx-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-8 py-4 max-w-[1106px] w-full mx-auto">
                     <div className="bg-bg-surface-pure rounded-12 shadow-card flex flex-col gap-4 p-4">
                         {/* Integration Header */}
                         <div className="flex flex-col gap-4">

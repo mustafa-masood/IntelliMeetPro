@@ -71,11 +71,11 @@ const Pricing: React.FC = () => {
     const currentPlans = plans[billingMode];
 
     const handleSelectPlan = (planType: string) => {
-        navigate('/signup/checkout', { state: { plan: planType, billing: billingMode } });
+        navigate('/deferred/signup/checkout', { state: { plan: planType, billing: billingMode } });
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure">
+        <div className="flex min-h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto bg-bg-surface-pure">
             {/* Left Column - Pricing */}
             <div className="flex-1 flex items-start justify-center p-6 bg-bg-surface-lv2 rounded-24 overflow-y-auto">
                 <div className="w-full max-w-7xl flex flex-col gap-12 items-center py-12">

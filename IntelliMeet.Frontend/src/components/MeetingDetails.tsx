@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
 import TeamCreationSidebar from './TeamCreationSidebar';
-import type { MeetingDetailsProps } from '../types';
+import type { MeetingDetailsProps, PmPlatform } from '../types';
+import { Link } from 'react-router-dom';
+import MeetingAskAI from './MeetingAskAI';
 
 const BOT_STATUS: Record<number, string> = {
     0: 'Unknown',
@@ -28,6 +30,15 @@ const TX_STATUS: Record<number, string> = {
     4: 'Failed',
 };
 
+const PIPELINE_STATUS: Record<number, string> = {
+    0: 'Idle',
+    1: 'Syncing meeting data',
+    2: 'Awaiting transcript',
+    3: 'Analyzing transcript',
+    4: 'Analysis complete',
+    5: 'Analysis failed',
+};
+
 const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     summary = '',
     keyPoints = [],
@@ -44,9 +55,20 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     meetingUrl = null,
     meetingPlatform = null,
     meetingBots = null,
+    meetingProcessingStatus = null,
+    meetingLifecycleStatusLabel = null,
+    meetingProcessingStatusLabel = null,
+    meetingAnalysisError = null,
+    meetingTranscriptAnalysisCompleted = null,
+    onPushActionToPm,
+    workspaceMembersForAssign = null,
+    canAssignActionItems = false,
+    onAssignActionItemUser,
 }) => {
     const [activeTab, setActiveTab] = useState<'summary' | 'transcription'>('summary');
     const [convertingId, setConvertingId] = useState<string | null>(null);
+    const [pushKey, setPushKey] = useState<string | null>(null);
+    const [assignBusyId, setAssignBusyId] = useState<string | null>(null);
     const [transcriptQuery, setTranscriptQuery] = useState('');
 
     const safeTranscript = transcript || { fullText: '', segments: [] };
@@ -87,6 +109,19 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
             .toUpperCase()
             .substring(0, 2);
 
+    const pmLabel = (p: PmPlatform) =>
+        p === 1 ? 'Asana' : p === 2 ? 'Jira' : 'Trello';
+
+    const runPush = async (itemId: string, platform: PmPlatform) => {
+        if (!onPushActionToPm) return;
+        setPushKey(`${platform}:${itemId}`);
+        try {
+            await onPushActionToPm(itemId, platform);
+        } finally {
+            setPushKey(null);
+        }
+    };
+
     const getAvatarColor = (speaker: string): string => {
         const colors = ['#3c91e6', '#fdeee7', '#16a34a', '#ea580c', '#8B5CF6'];
         const hash = speaker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -94,15 +129,15 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     };
 
     return (
-        <div className="flex min-h-screen w-full bg-bg-surface-lv1 overflow-x-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
             <Sidebar />
 
-            <div className="ml-0 lg:ml-[270px] mr-0 xl:mr-[190px] flex-1 flex flex-col min-h-screen overflow-hidden relative">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary px-4 sm:px-8 py-3 flex items-center sticky top-0 z-[100]">
+            <div className="ml-0 lg:ml-[270px] mr-0 xl:mr-[190px] flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary px-4 sm:px-8 py-3 flex items-center shrink-0 z-[100]">
                     <SearchBar placeholder="Search in workspace…" />
                 </div>
 
-                <div className="px-4 sm:px-8 pt-4 flex items-center gap-2 flex-wrap">
+                <div className="px-4 sm:px-8 pt-4 flex items-center gap-2 flex-wrap shrink-0">
                     <button
                         type="button"
                         onClick={onBack}
@@ -124,8 +159,32 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </span>
                 </div>
 
+                {meetingIdForApi && typeof meetingProcessingStatus === 'number' && (
+                    <div className="px-4 sm:px-8 pt-3 shrink-0">
+                        <div
+                            className={`rounded-12 border px-4 py-3 text-sm font-inter ${
+                                meetingProcessingStatus === 5
+                                    ? 'border-red-200 bg-red-50 text-red-900'
+                                    : meetingProcessingStatus === 4 || meetingTranscriptAnalysisCompleted
+                                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                      : 'border-amber-200 bg-amber-50 text-amber-950'
+                            }`}
+                            role="status"
+                        >
+                            <p className="m-0 font-semibold">
+                                {meetingProcessingStatusLabel
+                                    ?? PIPELINE_STATUS[meetingProcessingStatus]
+                                    ?? `Status (${meetingProcessingStatus})`}
+                            </p>
+                            {meetingAnalysisError ? (
+                                <p className="m-0 mt-1 text-xs opacity-90">{meetingAnalysisError}</p>
+                            ) : null}
+                        </div>
+                    </div>
+                )}
+
                 {meetingUrl && (
-                    <div className="px-4 sm:px-8 pt-4">
+                    <div className="px-4 sm:px-8 pt-4 shrink-0">
                         <div className="rounded-16 border border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/30 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-sm">
                             <div className="flex-1 min-w-0">
                                 <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
@@ -137,6 +196,11 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                 {meetingPlatform && (
                                     <span className="inline-block mt-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-bg-surface-lv1 text-text-secondary border border-stroke-primary">
                                         {meetingPlatform}
+                                    </span>
+                                )}
+                                {meetingLifecycleStatusLabel && (
+                                    <span className="inline-block mt-2 ml-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-primary-50 text-primary-700 border border-primary-200">
+                                        {meetingLifecycleStatusLabel}
                                     </span>
                                 )}
                             </div>
@@ -162,9 +226,9 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                 )}
 
                 {meetingBots && meetingBots.length > 0 && (
-                    <div className="px-4 sm:px-8 pt-3">
+                    <div className="px-4 sm:px-8 pt-3 shrink-0">
                         <div className="flex flex-wrap gap-2 items-center">
-                            <span className="text-xs font-inter font-medium text-text-secondary">Notetaker bots</span>
+                            <span className="text-xs font-inter font-medium text-text-secondary">IntelliMeet Pro bots</span>
                             {meetingBots.map((b) => (
                                 <div
                                     key={b.id}
@@ -173,16 +237,20 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                     <span className="text-text-tertiary truncate max-w-[140px]" title={b.externalBotId}>
                                         {b.externalBotId.slice(0, 10)}…
                                     </span>
-                                    <span className="text-primary-500 font-medium">{BOT_STATUS[b.status] ?? `Status ${b.status}`}</span>
+                                    <span className="text-primary-500 font-medium">
+                                        {b.statusLabel ?? BOT_STATUS[b.status] ?? `Status ${b.status}`}
+                                    </span>
                                     <span className="text-text-tertiary">·</span>
-                                    <span className="text-text-secondary">{TX_STATUS[b.transcriptionStatus] ?? 'Tx'}</span>
+                                    <span className="text-text-secondary">
+                                        {b.transcriptionStatusLabel ?? TX_STATUS[b.transcriptionStatus] ?? 'Tx'}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                <div className="px-4 sm:px-8 pt-4">
+                <div className="px-4 sm:px-8 pt-4 shrink-0">
                     <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 p-1 sm:p-2 flex gap-1 w-fit">
                         <button
                             type="button"
@@ -235,7 +303,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                         <p className="font-inter text-base leading-7 text-text-secondary m-0">
                                             {summary?.trim()
                                                 ? summary
-                                                : 'No summary yet. It will appear after Groq analysis runs (when transcript text is available), or open a meeting that already has notes in the system.'}
+                                                : 'No summary yet. It will appear after local Ollama analysis runs (when transcript text is available), or open a meeting that already has notes in the system.'}
                                         </p>
                                     </div>
 
@@ -254,7 +322,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                             </ul>
                                         ) : (
                                             <p className="font-inter text-sm text-text-secondary m-0">
-                                                No key points yet. They are filled when Groq analysis completes successfully.
+                                                No key points yet. They are filled when Ollama analysis completes successfully.
                                             </p>
                                         )}
                                     </div>
@@ -313,8 +381,101 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                                     {item.addToTodoChecked && (
                                                                         <span className="text-primary-500 text-sm ml-1">· In To-Dos</span>
                                                                     )}
+                                                                    {item.syncedPlatform && (
+                                                                        <span className="text-emerald-600 text-sm ml-1">
+                                                                            · Synced to {pmLabel(item.syncedPlatform)}
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                             </label>
+                                                            {item.suggestedAssigneeName &&
+                                                                !item.assignedUserId &&
+                                                                onAssignActionItemUser &&
+                                                                workspaceMembersForAssign &&
+                                                                workspaceMembersForAssign.length > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={assignBusyId !== null}
+                                                                        className="mt-1 ml-7 text-xs text-primary-600 underline text-left"
+                                                                        onClick={async () => {
+                                                                            const q = item.suggestedAssigneeName!.trim().toLowerCase();
+                                                                            const m = workspaceMembersForAssign.find(
+                                                                                (x) =>
+                                                                                    x.displayName.trim().toLowerCase() === q ||
+                                                                                    x.email.trim().toLowerCase().split('@')[0] === q
+                                                                            );
+                                                                            if (!m) return;
+                                                                            setAssignBusyId(item.id);
+                                                                            try {
+                                                                                await onAssignActionItemUser(item.id, m.userId);
+                                                                            } finally {
+                                                                                setAssignBusyId(null);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Suggested: {item.suggestedAssigneeName} (click to assign)
+                                                                    </button>
+                                                                )}
+                                                            {canAssignActionItems &&
+                                                                workspaceMembersForAssign &&
+                                                                workspaceMembersForAssign.length > 0 &&
+                                                                onAssignActionItemUser && (
+                                                                    <div className="mt-2 pl-7">
+                                                                        <label className="sr-only" htmlFor={`assign-${item.id}`}>
+                                                                            Assign action item
+                                                                        </label>
+                                                                        <select
+                                                                            id={`assign-${item.id}`}
+                                                                            className="text-xs border border-stroke-secondary rounded-8 px-2 py-1.5 bg-bg-surface-pure max-w-[260px]"
+                                                                            value={item.assignedUserId ?? ''}
+                                                                            disabled={assignBusyId === item.id}
+                                                                            onChange={async (e) => {
+                                                                                const v = e.target.value;
+                                                                                setAssignBusyId(item.id);
+                                                                                try {
+                                                                                    await onAssignActionItemUser(
+                                                                                        item.id,
+                                                                                        v ? v : null
+                                                                                    );
+                                                                                } finally {
+                                                                                    setAssignBusyId(null);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <option value="">Workspace member…</option>
+                                                                            {workspaceMembersForAssign.map((m) => (
+                                                                                <option key={m.userId} value={m.userId}>
+                                                                                    {m.displayName || m.email}
+                                                                                </option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                )}
+                                                            {onPushActionToPm && meetingIdForApi && (
+                                                                <div className="flex flex-wrap gap-1.5 mt-2 pl-7">
+                                                                    {item.externalTaskUrl && (
+                                                                        <a
+                                                                            href={item.externalTaskUrl}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-xs text-primary-600 underline"
+                                                                        >
+                                                                            Open in {item.syncedPlatform ? pmLabel(item.syncedPlatform) : 'tool'}
+                                                                        </a>
+                                                                    )}
+                                                                    {([1, 2, 3] as const).map((pl) => (
+                                                                        <button
+                                                                            key={pl}
+                                                                            type="button"
+                                                                            disabled={pushKey !== null}
+                                                                            onClick={() => void runPush(item.id, pl)}
+                                                                            className="text-xs px-2 py-1 rounded-8 border border-stroke-secondary bg-bg-surface-pure text-text-secondary hover:bg-bg-surface-lv1 disabled:opacity-50"
+                                                                        >
+                                                                            {pushKey === `${pl}:${item.id}` ? '…' : `Add to ${pmLabel(pl)}`}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -447,24 +608,23 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4">
-                            <p className="font-inter text-sm text-text-secondary leading-6 m-0">
-                                Use this space to draft follow-ups from the summary and transcript. Full chat integration can stream answers
-                                grounded in your Meeting BaaS data (transcript webhooks, structured summaries).
-                            </p>
+                            {meetingIdForApi ? (
+                                <MeetingAskAI meetingId={meetingIdForApi} />
+                            ) : (
+                                <p className="font-inter text-sm text-text-secondary leading-6 m-0">
+                                    Ask AI is available for API-backed meetings.
+                                </p>
+                            )}
                         </div>
                         <div className="p-4 border-t border-stroke-primary">
-                            <div className="w-full bg-bg-surface-lv1 border border-stroke-primary rounded-10 px-3 py-2.5 flex items-center gap-2">
-                                <span className="font-inter text-sm text-text-disable flex-1">Ask about decisions, risks, or next steps…</span>
-                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
-                                    <path
-                                        d="M10 3L17 10L10 17M17 10H3"
-                                        stroke="#16a34a"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            </div>
+                            {meetingIdForApi ? (
+                                <Link
+                                    to={`/experimental/ask-ai?meetingId=${meetingIdForApi}`}
+                                    className="text-xs font-inter text-text-tertiary underline"
+                                >
+                                    Open global Ask AI (this meeting pinned)
+                                </Link>
+                            ) : null}
                         </div>
                     </div>
                 </div>

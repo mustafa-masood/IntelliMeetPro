@@ -12,6 +12,7 @@ ASP.NET Core 8 Web API with a **clean, persistence-ready layout**: domain entiti
 | `GoogleOAuth:ClientId` | Google OAuth 2.0 Web client ID (safe to expose to the SPA via `GET /api/auth/google/config`). |
 | `GoogleOAuth:ClientSecret` | **Confidential.** Used only on the server to exchange the auth `code` and to call Meeting BaaS `list-raw` / `connect`. |
 | `GoogleOAuth:RedirectUri` | Must exactly match an **Authorized redirect URI** in Google Cloud (default `http://localhost:5173/oauth/google/callback`). |
+| `Runtime:SeedDemoData` | Seeds deterministic demo data into in-memory stores at startup when repositories are empty. |
 
 ```bash
 dotnet user-secrets set "MeetingBaas:ApiKey" "YOUR_KEY"
@@ -35,7 +36,7 @@ dotnet user-secrets set "GoogleOAuth:RedirectUri" "http://localhost:5173/oauth/g
 - **Calendars:** connect (proxies `POST /v2/calendars`), list, events, `sync`, `schedule-bot`
 - **Todos:** list/create/patch, `POST /api/todos/from-action-item`
 - **Webhooks:** `POST /api/webhooks/meetingbaas` (raw JSON; optional SVIX verification)
-- **Legacy upload:** `POST /api/meetings/analyzeWithTranscription` (existing frontend)
+- **Experimental (deferred):** `POST /api/experimental/meetings-transcription/analyzeWithTranscription`, `POST /api/experimental/meetings-transcription/analyze`
 
 ## Meeting BaaS integration
 
@@ -45,7 +46,7 @@ Webhooks are persisted as `WebhookEvent` rows for debugging; `MeetingBaasWebhook
 
 ## Seed data
 
-On startup, `InMemoryDataSeeder` adds a demo user, one completed meeting with transcript segments, summary, key points, an action item, and a sample todo (only if the user store is empty).
+When `Runtime:SeedDemoData=true`, startup runs `InMemoryDataSeeder`, which adds a demo user, one completed meeting with transcript segments, summary, key points, an action item, and a sample todo (only if the user store is empty).
 
 ## Swagger
 

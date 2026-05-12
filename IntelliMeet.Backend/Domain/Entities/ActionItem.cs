@@ -15,6 +15,20 @@ public sealed class ActionItem
     public bool AddToTodoChecked { get; set; }
     public Guid? LinkedTodoItemId { get; set; }
 
-    /// <summary>When <c>groq</c>, item was produced by Groq analysis and can be replaced on re-run.</summary>
+    /// <summary>When <c>ollama</c>, item was produced by transcript analysis and can be replaced on re-run.</summary>
     public string? Source { get; set; }
+
+    /// <summary>Last external task/issue/card link after a successful push.</summary>
+    public string? ExternalTaskUrl { get; set; }
+
+    /// <summary>Platform last synced to, if any.</summary>
+    public ProjectManagementPlatform? SyncedPlatform { get; set; }
+
+    public Guid? WorkspaceId { get; set; }
+
+    public Guid? AssignedUserId { get; set; }
+
+    public string? SuggestedAssigneeName { get; set; }
+
+    public float? SuggestedAssigneeConfidence { get; set; }
 }

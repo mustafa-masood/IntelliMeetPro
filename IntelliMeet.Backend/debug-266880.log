@@ -1,0 +1,2 @@
+{"sessionId":"266880","runId":"run1","hypothesisId":"H1","location":"Program.cs:dbcontext-registration","message":"Registered DbContext and factory lifetimes","data":{"options":["Scoped"],"factory":["Scoped"]},"timestamp":1778499804794}
+{"sessionId":"266880","runId":"run1","hypothesisId":"H3","location":"Program.cs:pre-build","message":"About to build host with dbcontext factory registration","data":{"hasFactory":true},"timestamp":1778499804863}

@@ -10,6 +10,7 @@ public sealed class GoogleOAuthService : IGoogleOAuthService
 {
     private readonly HttpClient _http;
     private readonly GoogleOAuthOptions _opt;
+    private readonly GoogleOptions _google;
     private readonly ILogger<GoogleOAuthService> _logger;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -17,24 +18,42 @@ public sealed class GoogleOAuthService : IGoogleOAuthService
         PropertyNameCaseInsensitive = true
     };
 
-    public GoogleOAuthService(HttpClient http, IOptions<GoogleOAuthOptions> opt, ILogger<GoogleOAuthService> logger)
+    public GoogleOAuthService(
+        HttpClient http,
+        IOptions<GoogleOAuthOptions> opt,
+        IOptions<GoogleOptions> google,
+        ILogger<GoogleOAuthService> logger)
     {
         _http = http;
         _opt = opt.Value;
+        _google = google.Value;
         _logger = logger;
     }
 
-    public async Task<GoogleTokenExchangeResult> ExchangeAuthorizationCodeAsync(string code, CancellationToken ct)
+    private string EffectiveClientId =>
+        !string.IsNullOrWhiteSpace(_google.ClientId) ? _google.ClientId.Trim() : _opt.ClientId.Trim();
+
+    private string EffectiveClientSecret =>
+        !string.IsNullOrWhiteSpace(_google.ClientSecret) ? _google.ClientSecret.Trim() : _opt.ClientSecret.Trim();
+
+    private string EffectiveRedirectUri =>
+        !string.IsNullOrWhiteSpace(_google.RedirectUri) ? _google.RedirectUri.Trim() : _opt.RedirectUri.Trim();
+
+    public async Task<GoogleTokenExchangeResult> ExchangeAuthorizationCodeAsync(
+        string code,
+        CancellationToken ct,
+        string? redirectUriOverride = null)
     {
-        if (string.IsNullOrWhiteSpace(_opt.ClientId) || string.IsNullOrWhiteSpace(_opt.ClientSecret))
+        if (string.IsNullOrWhiteSpace(EffectiveClientId) || string.IsNullOrWhiteSpace(EffectiveClientSecret))
             return new GoogleTokenExchangeResult(false, null, null, 0, null, "Google OAuth client id/secret are not configured on the server.");
 
+        var redirect = string.IsNullOrWhiteSpace(redirectUriOverride) ? EffectiveRedirectUri : redirectUriOverride.Trim();
         var form = new Dictionary<string, string>
         {
             ["code"] = code,
-            ["client_id"] = _opt.ClientId,
-            ["client_secret"] = _opt.ClientSecret,
-            ["redirect_uri"] = _opt.RedirectUri,
+            ["client_id"] = EffectiveClientId,
+            ["client_secret"] = EffectiveClientSecret,
+            ["redirect_uri"] = redirect,
             ["grant_type"] = "authorization_code"
         };
         using var content = new FormUrlEncodedContent(form);
@@ -79,6 +98,43 @@ public sealed class GoogleOAuthService : IGoogleOAuthService
         }
 
         return new GoogleTokenExchangeResult(true, tr.RefreshToken, tr.AccessToken, tr.ExpiresIn, email, null);
+    }
+
+    public async Task<GoogleTokenExchangeResult> RefreshAccessTokenAsync(string refreshToken, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(EffectiveClientId) || string.IsNullOrWhiteSpace(EffectiveClientSecret))
+            return new GoogleTokenExchangeResult(false, null, null, 0, null, "Google OAuth client id/secret are not configured on the server.");
+
+        var form = new Dictionary<string, string>
+        {
+            ["client_id"] = EffectiveClientId,
+            ["client_secret"] = EffectiveClientSecret,
+            ["refresh_token"] = refreshToken,
+            ["grant_type"] = "refresh_token"
+        };
+        using var content = new FormUrlEncodedContent(form);
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token") { Content = content };
+        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!resp.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Google token refresh failed: {Body}", body);
+            return new GoogleTokenExchangeResult(false, null, null, 0, null, body);
+        }
+        TokenResponse? tr;
+        try
+        {
+            tr = JsonSerializer.Deserialize<TokenResponse>(body, JsonOpts);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Google refresh token JSON parse failed");
+            return new GoogleTokenExchangeResult(false, null, null, 0, null, ex.Message);
+        }
+        if (tr?.AccessToken is null)
+            return new GoogleTokenExchangeResult(false, null, null, 0, null, "No access_token in Google refresh response.");
+
+        return new GoogleTokenExchangeResult(true, tr.RefreshToken, tr.AccessToken, tr.ExpiresIn, null, null);
     }
 
     private sealed class TokenResponse

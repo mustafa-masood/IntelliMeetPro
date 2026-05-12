@@ -122,9 +122,27 @@ public sealed class MeetingBaasClient : IMeetingBaasClient
     public Task<MeetingBaasResult<CalendarCreatedData>> CreateCalendarConnectionAsync(CreateCalendarRequest body, CancellationToken ct) =>
         PostAsync<CreateCalendarRequest, CalendarCreatedData>("v2/calendars", body, ct);
 
-    public async Task<MeetingBaasResult<IReadOnlyList<CalendarListItemData>>> ListCalendarsAsync(CancellationToken ct)
+    public async Task<MeetingBaasResult<IReadOnlyList<CalendarListItemData>>> ListCalendarsAsync(ListCalendarsQuery? query, CancellationToken ct)
     {
-        var raw = await GetRawAsync("v2/calendars", ct).ConfigureAwait(false);
+        var path = "v2/calendars";
+        if (query is not null)
+        {
+            var qs = new List<string>();
+            if (query.Limit > 0)
+                qs.Add("limit=" + Math.Clamp(query.Limit, 1, 250).ToString(CultureInfo.InvariantCulture));
+            if (!string.IsNullOrEmpty(query.Cursor))
+                qs.Add("cursor=" + Uri.EscapeDataString(query.Cursor));
+            if (!string.IsNullOrWhiteSpace(query.AccountEmail))
+                qs.Add("account_email=" + Uri.EscapeDataString(query.AccountEmail));
+            if (!string.IsNullOrWhiteSpace(query.CalendarPlatform))
+                qs.Add("calendar_platform=" + Uri.EscapeDataString(query.CalendarPlatform));
+            if (!string.IsNullOrWhiteSpace(query.Status))
+                qs.Add("status=" + Uri.EscapeDataString(query.Status));
+            if (qs.Count > 0)
+                path += "?" + string.Join('&', qs);
+        }
+
+        var raw = await GetRawAsync(path, ct).ConfigureAwait(false);
         if (!raw.Success)
             return new MeetingBaasResult<IReadOnlyList<CalendarListItemData>>(false, null, raw.StatusCode, raw.ErrorMessage, raw.RawBody);
         try
@@ -201,6 +219,9 @@ public sealed class MeetingBaasClient : IMeetingBaasClient
 
     public Task<MeetingBaasResult<ScheduleCalendarBotData>> ScheduleBotForEventAsync(string calendarId, ScheduleCalendarBotRequest body, CancellationToken ct) =>
         PostAsync<ScheduleCalendarBotRequest, ScheduleCalendarBotData>($"v2/calendars/{Uri.EscapeDataString(calendarId)}/bots", body, ct);
+
+    public Task<MeetingBaasResult<object>> DeleteCalendarConnectionAsync(string calendarId, CancellationToken ct) =>
+        DeleteAsync<object>($"v2/calendars/{Uri.EscapeDataString(calendarId)}", ct);
 
     private async Task<MeetingBaasResult<TData>> GetAsync<TData>(string relative, CancellationToken ct) where TData : class
     {

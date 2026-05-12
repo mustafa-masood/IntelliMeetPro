@@ -24,17 +24,17 @@ const PlanBilling: React.FC = () => {
   ];
 
   return (
-    <div className="flex w-screen h-screen bg-bg-surface-lv1 overflow-hidden">
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
       <Sidebar />
 
-      <div className="ml-[270px] flex-1 flex flex-col h-screen overflow-hidden relative">
+      <div className="ml-0 md:ml-[270px] flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
         {/* Topbar */}
-        <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card sticky top-0 z-100">
+        <div className="bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary px-8 py-[13px] flex items-center justify-between shadow-card shrink-0 z-100">
           <SearchBar />
         </div>
 
         {/* Page Header */}
-        <div className="px-8 pt-[10px] flex items-center gap-3">
+        <div className="px-8 pt-[10px] flex items-center gap-3 shrink-0">
           <button
             onClick={() => navigate(-1)}
             className="w-5 h-5 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -47,7 +47,7 @@ const PlanBilling: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-8 pt-4 pb-8">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-8 pt-4 pb-8">
           {/* Current Plan Section */}
           <div className="max-w-[1106px] mx-auto flex flex-col items-center gap-4 mb-8">
             <h2 className="font-inter font-medium text-2xl text-text-primary tracking-[-0.27px]">You are on the free plan</h2>

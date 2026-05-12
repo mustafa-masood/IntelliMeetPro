@@ -47,16 +47,16 @@ const Todos: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-bg-surface-lv1">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
             <MobileMenuButton isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
-            <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-[270px] transition-all duration-300">
+            <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
                 <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-14 flex items-center px-4 sm:px-8 shrink-0">
                     <SearchBar placeholder="Search to-dos…" className="sm:w-72" />
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6">
                         <header>
                             <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
@@ -194,6 +194,15 @@ const Todos: React.FC = () => {
                                                     <p className="font-inter text-sm text-text-secondary leading-6 m-0 mt-1">{item.description}</p>
                                                 )}
                                                 <div className="flex flex-wrap gap-2 mt-3 items-center">
+                                                    <span
+                                                        className={`text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 border ${
+                                                            done
+                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                : 'bg-amber-50 text-amber-800 border-amber-200'
+                                                        }`}
+                                                    >
+                                                        {done ? 'Done' : 'Open'}
+                                                    </span>
                                                     <span className="text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-primary-50 text-primary-500 border border-primary-100">
                                                         {item.type}
                                                     </span>

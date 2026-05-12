@@ -32,9 +32,8 @@ public sealed class BotJoinRequestDto
     [Url]
     public string MeetingUrl { get; set; } = string.Empty;
 
-    [Required]
-    [MinLength(1)]
-    public string BotName { get; set; } = string.Empty;
+    /// <summary>When null or whitespace, the API uses <c>MeetingBaas:DefaultBotName</c>.</summary>
+    public string? BotName { get; set; }
 
     public Guid? UserId { get; set; }
     public string? RecordingMode { get; set; }

@@ -9,6 +9,7 @@ public static class InMemoryDataSeeder
 {
     public static void Seed(
         IUserRepository users,
+        IWorkspaceRepository workspaces,
         IMeetingRepository meetings,
         IMeetingBotRepository bots,
         ITranscriptRepository transcripts,
@@ -21,19 +22,43 @@ public static class InMemoryDataSeeder
             return;
 
         var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var workspaceId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var now = DateTimeOffset.UtcNow;
+
+        workspaces.UpsertWorkspace(new Workspace
+        {
+            Id = workspaceId,
+            Name = "Demo workspace",
+            Plan = WorkspacePlan.Basic,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        });
+
         users.Upsert(new User
         {
             Id = userId,
             Email = "demo@intellimeet.local",
             DisplayName = "Demo User",
-            CreatedAt = DateTimeOffset.UtcNow.AddDays(-30)
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-30),
+            WorkspaceId = workspaceId,
+            CurrentPlan = BillingSubscriptionTier.Basic,
+            SubscriptionStatus = BillingSubscriptionStatus.Active
+        });
+
+        workspaces.UpsertMember(new WorkspaceMember
+        {
+            Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            WorkspaceId = workspaceId,
+            UserId = userId,
+            Role = WorkspaceMemberRole.Admin,
+            CreatedAtUtc = now
         });
 
         var meetingId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var now = DateTimeOffset.UtcNow;
         meetings.Upsert(new Meeting
         {
             Id = meetingId,
+            WorkspaceId = workspaceId,
             OrganizerUserId = userId,
             Title = "Q2 Planning — seeded demo",
             Platform = "google_meet",
@@ -43,6 +68,9 @@ public static class InMemoryDataSeeder
             Participants = new[] { "Alice", "Bob" },
             Status = MeetingStatus.Completed,
             CalendarEventId = null,
+            TranscriptAnalysisCompleted = true,
+            ProcessingStatus = MeetingProcessingStatus.AnalysisComplete,
+            AnalysisError = null,
             CreatedAt = now.AddDays(-2),
             UpdatedAt = now
         });
@@ -97,6 +125,8 @@ public static class InMemoryDataSeeder
             MeetingId = meetingId,
             ShortSummary = "Quick sync on Q2 priorities.",
             StructuredSections = new[] { "Goals: accelerate delivery", "Risks: staffing" },
+            Decisions = Array.Empty<string>(),
+            Risks = new[] { "Staffing constraints" },
             UpdatedAt = now
         });
 
@@ -111,6 +141,7 @@ public static class InMemoryDataSeeder
         {
             Id = actionId,
             MeetingId = meetingId,
+            WorkspaceId = workspaceId,
             Title = "Send updated timeline",
             Description = "Share Gantt by Friday",
             Owner = "Alice",

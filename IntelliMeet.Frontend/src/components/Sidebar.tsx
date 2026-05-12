@@ -1,5 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useClerk, useUser } from '@clerk/clerk-react';
+import { isClerkConfigured } from '../config/clerk';
+import { imApi, type OnboardingMeDto } from '../api/intellimeet';
 
 interface NavItem {
   label: string;
@@ -94,16 +97,67 @@ const Sidebar: React.FC<SidebarProps> = ({
   onMobileClose
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const clerkEnabled = isClerkConfigured();
+  const clerk = clerkEnabled ? useClerk() : null;
+  const user = clerkEnabled ? useUser() : null;
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLDivElement>(null);
+  const [isEnterprise, setIsEnterprise] = useState<boolean>(!clerkEnabled);
+  const [me, setMe] = useState<OnboardingMeDto | null>(null);
+
+  const displayName = useMemo(() => {
+    if (user?.isLoaded && user.user) {
+      return user.user.fullName || user.user.firstName || user.user.username || 'Account';
+    }
+    return userName;
+  }, [user?.isLoaded, user?.user, userName]);
+
+  const displayEmail = useMemo(() => {
+    if (user?.isLoaded && user.user) {
+      return user.user.primaryEmailAddress?.emailAddress || '';
+    }
+    return userEmail;
+  }, [user?.isLoaded, user?.user, userEmail]);
+
+  useEffect(() => {
+    if (!clerkEnabled) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const me = await imApi.onboardingMe();
+        if (cancelled) return;
+        setMe(me);
+        const plan = (me.currentPlan ?? '').toLowerCase();
+        const status = (me.subscriptionStatus ?? '').toLowerCase();
+        setIsEnterprise(plan === 'enterprise' && status === 'active');
+      } catch {
+        if (!cancelled) setIsEnterprise(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkEnabled]);
+
+  const planBadge = useMemo(() => {
+    if (!clerkEnabled || !me) return null;
+    const plan = me.currentPlan || '—';
+    const end = me.planEndDateUtc ? new Date(me.planEndDateUtc) : null;
+    if (!end || Number.isNaN(end.getTime())) return `Plan: ${plan}`;
+    const msLeft = end.getTime() - Date.now();
+    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    const timeLeft = daysLeft >= 1 ? `${daysLeft}d left` : 'renews soon';
+    return `Plan: ${plan} • ${timeLeft}`;
+  }, [clerkEnabled, me]);
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', iconType: 'dashboard' },
     { label: 'Meetings', path: '/meetings', iconType: 'meetings' },
     { label: 'Calendar', path: '/calendar', iconType: 'calendar' },
     { label: "To-do's", path: '/todos', iconType: 'todos' },
-    { label: 'Ask AI', path: '/ask-ai', iconType: 'ask-ai' },
+    { label: 'Ask AI (Experimental)', path: '/experimental/ask-ai', iconType: 'ask-ai' },
   ];
 
   const renderIcon = (iconType: string, isActive: boolean) => {
@@ -208,26 +262,42 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-px bg-neutral-400 opacity-20 w-full" />
 
           <div className="flex flex-col gap-1">
-            <Link
-              to="/my-workspace"
-              className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
-                location.pathname === '/my-workspace'
-                  ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
-                  : 'hover:bg-white/5'
-              }`}
-              onClick={onMobileClose}
-            >
-              <BuildingIcon isActive={location.pathname === '/my-workspace'} />
-              <span className={`flex-1 font-inter font-medium text-sm tracking-[-0.084px] ${
-                location.pathname === '/my-workspace' ? 'text-white' : 'text-neutral-300'
-              }`}>
-                My Workspace
-              </span>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M8 2V14" stroke={location.pathname === '/my-workspace' ? 'white' : '#c1c6c5'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 8H14" stroke={location.pathname === '/my-workspace' ? 'white' : '#c1c6c5'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
+            {isEnterprise && (
+              <Link
+                to="/my-workspace"
+                className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
+                  location.pathname === '/my-workspace'
+                    ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
+                    : 'hover:bg-white/5'
+                }`}
+                onClick={onMobileClose}
+              >
+                <BuildingIcon isActive={location.pathname === '/my-workspace'} />
+                <span
+                  className={`flex-1 font-inter font-medium text-sm tracking-[-0.084px] ${
+                    location.pathname === '/my-workspace' ? 'text-white' : 'text-neutral-300'
+                  }`}
+                >
+                  My Workspace
+                </span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path
+                    d="M8 2V14"
+                    stroke={location.pathname === '/my-workspace' ? 'white' : '#c1c6c5'}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M2 8H14"
+                    stroke={location.pathname === '/my-workspace' ? 'white' : '#c1c6c5'}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+            )}
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -264,19 +334,19 @@ const Sidebar: React.FC<SidebarProps> = ({
               PREFERENCE
             </div>
             <Link
-              to="/app-integrations"
+              to="/deferred/app-integrations"
               className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
-                location.pathname === '/app-integrations'
+                location.pathname.startsWith('/deferred/app-integrations')
                   ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
                   : 'hover:bg-white/5'
               }`}
               onClick={onMobileClose}
             >
               <div className="w-5 h-5 flex items-center justify-center">
-                <SettingsIcon isActive={location.pathname === '/app-integrations'} />
+                <SettingsIcon isActive={location.pathname.startsWith('/deferred/app-integrations')} />
               </div>
               <span className={`flex-1 font-inter font-medium text-sm tracking-[-0.084px] ${
-                location.pathname === '/app-integrations' ? 'text-white' : 'text-neutral-300'
+                location.pathname.startsWith('/deferred/app-integrations') ? 'text-white' : 'text-neutral-300'
               }`}>
                 App & Integrations
               </span>
@@ -284,32 +354,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </nav>
 
-        {/* Enterprise Card */}
-        <div className="bg-transparent border border-white/12 rounded-12 p-4 flex flex-col gap-3 mx-4 mb-4">
-          <div className="flex items-center gap-2">
-            <span className="font-inter font-medium text-base text-text-white tracking-[-0.176px] leading-6">
-              Enterprise
-            </span>
-          </div>
-          <div className="flex items-center gap-2 font-inter font-normal text-xs text-text-white leading-4">
-            <div className="bg-white/5 border border-white/6 rounded-4 px-2 h-5 flex items-center justify-center text-xs text-text-white">
-              06
+        {/* Plan Card */}
+        {planBadge ? (
+          <div className="bg-transparent border border-white/12 rounded-12 p-4 flex flex-col gap-2 mx-4 mb-4">
+            <div className="font-inter font-medium text-base text-text-white tracking-[-0.176px] leading-6">
+              {planBadge}
             </div>
-            <span>days</span>
-            <div className="bg-white/5 border border-white/6 rounded-4 px-2 h-5 flex items-center justify-center text-xs text-text-white">
-              23
-            </div>
-            <span>hours</span>
+            {me?.role ? (
+              <div className="font-inter font-normal text-xs text-neutral-300 leading-4">Role: {me.role}</div>
+            ) : null}
           </div>
-          <button 
-            className="border border-[#009f6d] rounded-8 bg-gradient-to-b from-[rgba(0,159,109,0)] to-[rgba(0,159,109,0.05)] bg-gradient-to-r from-white/4 to-white/4 p-2 w-full flex items-center justify-center gap-1 cursor-pointer shadow-[inset_0px_0px_12px_0px_rgba(0,159,109,0.08)] transition-opacity hover:opacity-90"
-            aria-label="Upgrade to Enterprise"
-          >
-            <span className="font-inter font-medium text-sm text-text-white tracking-[-0.084px]">
-              Upgrade
-            </span>
-          </button>
-        </div>
+        ) : null}
 
         {/* Profile Section */}
         <div className="p-4 sm:p-5 px-4 bg-neutral-900 relative shrink-0">
@@ -326,20 +381,20 @@ const Sidebar: React.FC<SidebarProps> = ({
               {userAvatar ? (
                 <img 
                   src={userAvatar} 
-                  alt={userName} 
+                  alt={displayName} 
                   className="w-9 h-9 rounded-full object-cover shrink-0" 
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium text-base shrink-0">
-                  {userName.charAt(0).toUpperCase()}
+                  {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex flex-col min-w-0">
                 <div className="font-inter font-normal text-sm sm:text-base text-text-white tracking-[-0.176px] leading-6 truncate">
-                  {userName}
+                  {displayName}
                 </div>
                 <div className="font-inter font-normal text-xs text-neutral-300 leading-4 truncate">
-                  {userEmail}
+                  {displayEmail}
                 </div>
               </div>
             </div>
@@ -371,7 +426,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 </Link>
                 <Link
-                  to="/plan-billing"
+                  to="/deferred/plan-billing"
                   onClick={() => {
                     setIsProfileDropdownOpen(false);
                     onMobileClose?.();
@@ -386,13 +441,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                     Plan & Billings
                   </span>
                 </Link>
-                <Link
-                  to="/signin"
+                <button
+                  type="button"
                   onClick={() => {
                     setIsProfileDropdownOpen(false);
                     onMobileClose?.();
+                    if (clerkEnabled && clerk) {
+                      void clerk.signOut(() => navigate('/', { replace: true }));
+                      return;
+                    }
+                    navigate('/signin', { replace: true });
                   }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer no-underline text-inherit"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer text-left w-full border-0 bg-transparent"
                   role="menuitem"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -401,9 +461,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <path d="M17.5 10H7.5" stroke="#2b3d39" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px]">
-                    Log out
+                    Sign out
                   </span>
-                </Link>
+                </button>
               </div>
             </div>
           )}

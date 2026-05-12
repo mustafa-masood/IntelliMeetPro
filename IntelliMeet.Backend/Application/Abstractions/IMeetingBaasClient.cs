@@ -18,9 +18,10 @@ public interface IMeetingBaasClient
 
     Task<MeetingBaasResult<IReadOnlyList<RawCalendarListItemData>>> ListRawCalendarsAsync(ListRawCalendarsRequest body, CancellationToken ct);
     Task<MeetingBaasResult<CalendarCreatedData>> CreateCalendarConnectionAsync(CreateCalendarRequest body, CancellationToken ct);
-    Task<MeetingBaasResult<IReadOnlyList<CalendarListItemData>>> ListCalendarsAsync(CancellationToken ct);
+    Task<MeetingBaasResult<IReadOnlyList<CalendarListItemData>>> ListCalendarsAsync(ListCalendarsQuery? query, CancellationToken ct);
     Task<MeetingBaasResult<CalendarDetailData>> GetCalendarAsync(string calendarId, CancellationToken ct);
     Task<MeetingBaasResult<object>> SyncCalendarAsync(string calendarId, CancellationToken ct);
     Task<MeetingBaasResult<CalendarEventsPageData>> GetCalendarEventsAsync(string calendarId, CancellationToken ct);
     Task<MeetingBaasResult<ScheduleCalendarBotData>> ScheduleBotForEventAsync(string calendarId, ScheduleCalendarBotRequest body, CancellationToken ct);
+    Task<MeetingBaasResult<object>> DeleteCalendarConnectionAsync(string calendarId, CancellationToken ct);
 }

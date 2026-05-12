@@ -1,7 +1,11 @@
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
+using IntelliMeet.Backend.Options;
+using Microsoft.Extensions.Options;
 
 namespace IntelliMeet.Backend.Application.Services;
 
@@ -14,7 +18,9 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
     private readonly ICalendarEventRepository _events;
     private readonly IMeetingBaasClient _mb;
     private readonly IMeetingBaasArtifactApplier _artifacts;
-    private readonly IGroqAnalysisBackgroundTrigger _groqTrigger;
+    private readonly ITranscriptAnalysisBackgroundTrigger _analysisTrigger;
+    private readonly IMeetingFlowCoordinationStore _flowCoordination;
+    private readonly ReliabilityOptions _reliability;
     private readonly ILogger<MeetingBaasWebhookProcessor> _logger;
 
     public MeetingBaasWebhookProcessor(
@@ -25,7 +31,9 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         ICalendarEventRepository events,
         IMeetingBaasClient mb,
         IMeetingBaasArtifactApplier artifacts,
-        IGroqAnalysisBackgroundTrigger groqTrigger,
+        ITranscriptAnalysisBackgroundTrigger analysisTrigger,
+        IMeetingFlowCoordinationStore flowCoordination,
+        IOptions<ReliabilityOptions> reliability,
         ILogger<MeetingBaasWebhookProcessor> logger)
     {
         _webhooks = webhooks;
@@ -35,13 +43,23 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         _events = events;
         _mb = mb;
         _artifacts = artifacts;
-        _groqTrigger = groqTrigger;
+        _analysisTrigger = analysisTrigger;
+        _flowCoordination = flowCoordination;
+        _reliability = reliability.Value;
         _logger = logger;
     }
 
     public async Task<WebhookAcceptResult> ProcessAsync(string rawPayload, string? svixId, CancellationToken ct)
     {
         var type = WebhookEventParser.ParseType(rawPayload);
+        var botId = WebhookEventParser.TryGetBotId(rawPayload);
+        var dedupeKey = BuildDedupeKey(type, svixId, botId, rawPayload);
+        var now = DateTimeOffset.UtcNow;
+        var duplicate = !_flowCoordination.TryBeginWebhookEvent(
+            dedupeKey,
+            now,
+            TimeSpan.FromSeconds(Math.Clamp(_reliability.WebhookDeduplicationWindowSeconds, 5, 3600)));
+
         var evt = new WebhookEvent
         {
             Id = Guid.NewGuid(),
@@ -49,11 +67,26 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
             RawPayload = rawPayload,
             ExternalMessageId = svixId,
             Processed = false,
-            ReceivedAt = DateTimeOffset.UtcNow
+            ReceivedAt = now
         };
+        _logger.LogInformation(
+            "Webhook received svixId={SvixId} type={Type} botId={BotId} duplicate={Duplicate}",
+            svixId,
+            type,
+            botId,
+            duplicate);
+
+        if (duplicate)
+        {
+            evt.Processed = true;
+            evt.ProcessingNote = $"duplicate:{dedupeKey}";
+            _webhooks.Add(evt);
+            return new WebhookAcceptResult(true, null);
+        }
+
         try
         {
-            await ApplyDomainUpdatesAsync(type, rawPayload, ct).ConfigureAwait(false);
+            await ApplyDomainUpdatesAsync(type, rawPayload, botId, ct).ConfigureAwait(false);
             evt.Processed = true;
             evt.ProcessingNote = "ok";
         }
@@ -66,9 +99,8 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         return new WebhookAcceptResult(true, null);
     }
 
-    private async Task ApplyDomainUpdatesAsync(WebhookEventType type, string raw, CancellationToken ct)
+    private async Task ApplyDomainUpdatesAsync(WebhookEventType type, string raw, string? botId, CancellationToken ct)
     {
-        var botId = WebhookEventParser.TryGetBotId(raw);
         switch (type)
         {
             case WebhookEventType.BotStatusChange:
@@ -113,10 +145,33 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         var st = await _mb.GetBotStatusAsync(externalBotId, ct).ConfigureAwait(false);
         if (st.Success && st.Data is not null)
         {
-            bot.Status = BotStatusMapper.FromMeetingBaas(st.Data.Status);
-            bot.TranscriptionStatus = BotStatusMapper.TranscriptionFromMeetingBaas(st.Data.TranscriptionStatus);
-            bot.UpdatedAt = DateTimeOffset.UtcNow;
+            var now = DateTimeOffset.UtcNow;
+            var meeting = _meetings.GetById(bot.MeetingId);
+            var previousBot = bot.Status;
+            var previousTx = bot.TranscriptionStatus;
+            var previousMeeting = meeting?.Status;
+            MeetingDomainStateMachine.ApplyMappedBotStatus(
+                bot,
+                meeting,
+                BotStatusMapper.FromMeetingBaas(st.Data.Status),
+                BotStatusMapper.TranscriptionFromMeetingBaas(st.Data.TranscriptionStatus),
+                now);
             _bots.Upsert(bot);
+            if (meeting is not null)
+            {
+                _meetings.Upsert(meeting);
+                _flowCoordination.MarkWebhookTouch(meeting.Id, now);
+            }
+            _logger.LogInformation(
+                "Webhook transition type=bot.status_change bot={BotId} meeting={MeetingId} bot {PrevBot}->{NewBot} tx {PrevTx}->{NewTx} meeting {PrevMeeting}->{NewMeeting}",
+                externalBotId,
+                meeting?.Id,
+                previousBot,
+                bot.Status,
+                previousTx,
+                bot.TranscriptionStatus,
+                previousMeeting,
+                meeting?.Status);
         }
     }
 
@@ -130,20 +185,31 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         }
         var details = await _mb.GetBotAsync(externalBotId, ct).ConfigureAwait(false);
         var meeting = _meetings.GetById(bot.MeetingId);
+        var previousBot = bot.Status;
+        var previousTx = bot.TranscriptionStatus;
+        var previousMeeting = meeting?.Status;
+        var now = DateTimeOffset.UtcNow;
+        MeetingDomainStateMachine.MarkBotCompleted(bot, meeting, now);
+        _bots.Upsert(bot);
         if (meeting is not null)
         {
-            meeting.Status = MeetingStatus.Completed;
-            meeting.UpdatedAt = DateTimeOffset.UtcNow;
             _meetings.Upsert(meeting);
+            _flowCoordination.MarkWebhookTouch(meeting.Id, now);
         }
-        bot.Status = BotOperationalStatus.Completed;
-        bot.TranscriptionStatus = TranscriptStatus.Ready;
-        bot.UpdatedAt = DateTimeOffset.UtcNow;
-        _bots.Upsert(bot);
+        _logger.LogInformation(
+            "Webhook transition type=bot.completed bot={BotId} meeting={MeetingId} bot {PrevBot}->{NewBot} tx {PrevTx}->{NewTx} meeting {PrevMeeting}->{NewMeeting}",
+            externalBotId,
+            meeting?.Id,
+            previousBot,
+            bot.Status,
+            previousTx,
+            bot.TranscriptionStatus,
+            previousMeeting,
+            meeting?.Status);
         if (details.Success && details.Data is not null)
             _artifacts.ApplyFromBotDetails(bot.MeetingId, details.Data);
         TryApplyArtifactsFromWebhookJson(bot.MeetingId, raw);
-        _groqTrigger.EnqueueIfEnabled(bot.MeetingId);
+        _analysisTrigger.EnqueueIfEnabled(bot.MeetingId);
     }
 
     private void FailBot(string externalBotId, string raw)
@@ -151,16 +217,25 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         var bot = _bots.GetByExternalBotId(externalBotId);
         if (bot is null)
             return;
-        bot.Status = BotOperationalStatus.Failed;
-        bot.UpdatedAt = DateTimeOffset.UtcNow;
+        var previousBot = bot.Status;
+        var now = DateTimeOffset.UtcNow;
+        var meeting = _meetings.GetById(bot.MeetingId);
+        var previousMeeting = meeting?.Status;
+        MeetingDomainStateMachine.MarkBotFailed(bot, meeting, now);
         _bots.Upsert(bot);
-        var m = _meetings.GetById(bot.MeetingId);
-        if (m is not null)
+        if (meeting is not null)
         {
-            m.Status = MeetingStatus.Failed;
-            m.UpdatedAt = DateTimeOffset.UtcNow;
-            _meetings.Upsert(m);
+            _meetings.Upsert(meeting);
+            _flowCoordination.MarkWebhookTouch(meeting.Id, now);
         }
+        _logger.LogInformation(
+            "Webhook transition type=bot.failed bot={BotId} meeting={MeetingId} bot {PrevBot}->{NewBot} meeting {PrevMeeting}->{NewMeeting}",
+            externalBotId,
+            meeting?.Id,
+            previousBot,
+            bot.Status,
+            previousMeeting,
+            meeting?.Status);
         _logger.LogWarning("Bot failed: {Id} payload snippet {Snippet}", externalBotId, raw[..Math.Min(200, raw.Length)]);
     }
 
@@ -169,14 +244,30 @@ public sealed class MeetingBaasWebhookProcessor : IMeetingBaasWebhookProcessor
         var bot = _bots.GetByExternalBotId(externalBotId);
         if (bot is null)
             return;
-        bot.TranscriptionStatus = TranscriptStatus.Ready;
-        bot.UpdatedAt = DateTimeOffset.UtcNow;
+        var previousTx = bot.TranscriptionStatus;
+        MeetingDomainStateMachine.MarkBotTranscriptionReady(bot, DateTimeOffset.UtcNow);
         _bots.Upsert(bot);
+        _logger.LogInformation(
+            "Webhook transition type=transcription.complete bot={BotId} tx {PrevTx}->{NewTx}",
+            externalBotId,
+            previousTx,
+            bot.TranscriptionStatus);
         TryApplyArtifactsFromWebhookJson(bot.MeetingId, raw);
         var details = await _mb.GetBotAsync(externalBotId, ct).ConfigureAwait(false);
         if (details.Success && details.Data is not null)
             _artifacts.ApplyFromBotDetails(bot.MeetingId, details.Data);
-        _groqTrigger.EnqueueIfEnabled(bot.MeetingId);
+        _flowCoordination.MarkWebhookTouch(bot.MeetingId, DateTimeOffset.UtcNow);
+        _analysisTrigger.EnqueueIfEnabled(bot.MeetingId);
+    }
+
+    private static string BuildDedupeKey(WebhookEventType type, string? svixId, string? botId, string rawPayload)
+    {
+        if (!string.IsNullOrWhiteSpace(svixId))
+            return $"svix:{svixId.Trim()}";
+
+        using var sha = SHA256.Create();
+        var hash = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(rawPayload)));
+        return $"fallback:{type}:{botId}:{hash}";
     }
 
     private void TryApplyArtifactsFromWebhookJson(Guid meetingId, string raw)

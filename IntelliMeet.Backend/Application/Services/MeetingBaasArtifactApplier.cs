@@ -29,6 +29,10 @@ public sealed class MeetingBaasArtifactApplier : IMeetingBaasArtifactApplier
         {
             if (string.IsNullOrWhiteSpace(url))
                 return;
+            var existing = _recordings.GetByMeetingId(meetingId)
+                .FirstOrDefault(r => r.Kind.Equals(kind, StringComparison.OrdinalIgnoreCase) && string.Equals(r.Url, url, StringComparison.Ordinal));
+            if (existing is not null)
+                return;
             _recordings.Upsert(new RecordingAsset
             {
                 Id = Guid.NewGuid(),

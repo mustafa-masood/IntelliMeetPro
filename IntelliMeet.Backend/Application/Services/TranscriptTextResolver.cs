@@ -32,8 +32,9 @@ public sealed class TranscriptTextResolver : ITranscriptTextResolver
         var t = _transcripts.GetByMeetingId(meetingId);
         if (t is not null)
         {
-            if (!string.IsNullOrWhiteSpace(t.RawText))
-                return Normalize(t.RawText);
+            var fromStored = NormalizeFetched(t.RawText ?? string.Empty);
+            if (!string.IsNullOrWhiteSpace(fromStored))
+                return fromStored;
 
             var segments = _transcripts.GetSegments(t.Id);
             if (segments.Count > 0)
@@ -67,11 +68,11 @@ public sealed class TranscriptTextResolver : ITranscriptTextResolver
             var details = await _mb.GetBotAsync(bot.ExternalBotId, ct).ConfigureAwait(false);
             if (!details.Success || details.Data is null)
                 continue;
-            // Prefer diarization (speaker-attributed), then processed transcription, then raw.
-            var fromMb = await TryFetchUrlAsync(details.Data.Diarization, ct).ConfigureAwait(false);
+            // Prefer processed transcription first (usually contains utterance text), then diarization/raw fallbacks.
+            var fromMb = await TryFetchUrlAsync(details.Data.Transcription, ct).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(fromMb))
                 return fromMb;
-            fromMb = await TryFetchUrlAsync(details.Data.Transcription, ct).ConfigureAwait(false);
+            fromMb = await TryFetchUrlAsync(details.Data.Diarization, ct).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(fromMb))
                 return fromMb;
             fromMb = await TryFetchUrlAsync(details.Data.RawTranscription, ct).ConfigureAwait(false);
@@ -109,30 +110,15 @@ public sealed class TranscriptTextResolver : ITranscriptTextResolver
         var t = body.Trim();
         if (t.Length == 0)
             return null;
+        var lookedLikeJson = false;
         if (t.StartsWith('[') || t.StartsWith('{'))
         {
+            lookedLikeJson = true;
             try
             {
                 using var doc = JsonDocument.Parse(t);
-                if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                {
-                    var sb = new StringBuilder();
-                    foreach (var el in doc.RootElement.EnumerateArray())
-                    {
-                        var sp = el.TryGetProperty("speaker", out var s) ? s.GetString() : null;
-                        if (el.TryGetProperty("text", out var tx))
-                        {
-                            if (!string.IsNullOrEmpty(sp))
-                                sb.Append('[').Append(sp).Append("] ");
-                            sb.AppendLine(tx.GetString());
-                        }
-                        else if (el.TryGetProperty("content", out var c))
-                            sb.AppendLine(c.GetString());
-                    }
-
-                    var s2 = sb.ToString().Trim();
-                    return s2.Length > 0 ? s2 : null;
-                }
+                if (TryExtractFromJsonRoot(doc.RootElement, out var extracted))
+                    return extracted;
             }
             catch
             {
@@ -140,7 +126,116 @@ public sealed class TranscriptTextResolver : ITranscriptTextResolver
             }
         }
 
+        var fromJsonLines = TryExtractFromJsonLines(t);
+        if (!string.IsNullOrWhiteSpace(fromJsonLines))
+            return fromJsonLines;
+
+        // If this looked structured but carried no textual content, avoid returning metadata blobs.
+        if (lookedLikeJson || LooksLikeJsonLines(t))
+            return null;
+
         return Normalize(t);
+    }
+
+    private static bool TryExtractFromJsonRoot(JsonElement root, out string? extracted)
+    {
+        extracted = null;
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            extracted = BuildFromArray(root);
+            return !string.IsNullOrWhiteSpace(extracted);
+        }
+
+        if (root.ValueKind != JsonValueKind.Object)
+            return false;
+
+        if (root.TryGetProperty("result", out var resultObj) &&
+            resultObj.ValueKind == JsonValueKind.Object &&
+            resultObj.TryGetProperty("utterances", out var utterances) &&
+            utterances.ValueKind == JsonValueKind.Array)
+        {
+            extracted = BuildFromArray(utterances);
+            return !string.IsNullOrWhiteSpace(extracted);
+        }
+
+        if (root.TryGetProperty("utterances", out var directUtterances) && directUtterances.ValueKind == JsonValueKind.Array)
+        {
+            extracted = BuildFromArray(directUtterances);
+            return !string.IsNullOrWhiteSpace(extracted);
+        }
+
+        if (root.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
+        {
+            extracted = Normalize(textProp.GetString() ?? string.Empty);
+            return !string.IsNullOrWhiteSpace(extracted);
+        }
+
+        return false;
+    }
+
+    private static string? BuildFromArray(JsonElement array)
+    {
+        var sb = new StringBuilder();
+        foreach (var el in array.EnumerateArray())
+        {
+            var sp = el.TryGetProperty("speaker", out var s) ? s.GetString() : null;
+            if (el.TryGetProperty("text", out var tx) && tx.ValueKind == JsonValueKind.String)
+            {
+                var line = tx.GetString();
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    if (!string.IsNullOrEmpty(sp))
+                        sb.Append('[').Append(sp).Append("] ");
+                    sb.AppendLine(line);
+                }
+            }
+            else if (el.TryGetProperty("content", out var c) && c.ValueKind == JsonValueKind.String)
+            {
+                var line = c.GetString();
+                if (!string.IsNullOrWhiteSpace(line))
+                    sb.AppendLine(line);
+            }
+        }
+        var joined = sb.ToString().Trim();
+        return joined.Length > 0 ? joined : null;
+    }
+
+    private static string? TryExtractFromJsonLines(string text)
+    {
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (lines.Length == 0)
+            return null;
+
+        var sb = new StringBuilder();
+        var parsedAny = false;
+        foreach (var line in lines)
+        {
+            if (!line.StartsWith('{') || !line.EndsWith('}'))
+                continue;
+            try
+            {
+                using var doc = JsonDocument.Parse(line);
+                if (!TryExtractFromJsonRoot(doc.RootElement, out var extracted) || string.IsNullOrWhiteSpace(extracted))
+                    continue;
+                sb.AppendLine(extracted);
+                parsedAny = true;
+            }
+            catch
+            {
+                // Not a strict JSONL transcript line; skip.
+            }
+        }
+
+        if (!parsedAny)
+            return null;
+        var joined = sb.ToString().Trim();
+        return joined.Length > 0 ? joined : null;
+    }
+
+    private static bool LooksLikeJsonLines(string text)
+    {
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return lines.Length > 0 && lines.All(line => line.StartsWith('{') && line.EndsWith('}'));
     }
 
     private static string Normalize(string s) => s.Trim();

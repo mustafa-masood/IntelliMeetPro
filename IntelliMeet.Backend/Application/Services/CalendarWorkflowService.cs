@@ -3,6 +3,7 @@ using IntelliMeet.Backend.Application.DTOs;
 using IntelliMeet.Backend.Application.Integration;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
+using IntelliMeet.Backend.Infrastructure.MeetingBaas;
 using IntelliMeet.Backend.Options;
 using Microsoft.Extensions.Options;
 
@@ -13,29 +14,38 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
     private readonly ICalendarConnectionRepository _connections;
     private readonly ICalendarEventRepository _events;
     private readonly IIntegrationCredentialsRepository _credentials;
+    private readonly IUserRepository _users;
     private readonly IMeetingBaasClient _mb;
     private readonly IMeetingRepository _meetings;
     private readonly IMeetingBotRepository _bots;
+    private readonly IMeetingTeamResolver _meetingTeam;
     private readonly GoogleOAuthOptions _google;
+    private readonly MeetingBaasOptions _meetingBaas;
     private readonly ILogger<CalendarWorkflowService> _logger;
 
     public CalendarWorkflowService(
         ICalendarConnectionRepository connections,
         ICalendarEventRepository events,
         IIntegrationCredentialsRepository credentials,
+        IUserRepository users,
         IMeetingBaasClient mb,
         IMeetingRepository meetings,
         IMeetingBotRepository bots,
+        IMeetingTeamResolver meetingTeam,
         IOptions<GoogleOAuthOptions> google,
+        IOptions<MeetingBaasOptions> meetingBaas,
         ILogger<CalendarWorkflowService> logger)
     {
         _connections = connections;
         _events = events;
         _credentials = credentials;
+        _users = users;
         _mb = mb;
         _meetings = meetings;
         _bots = bots;
+        _meetingTeam = meetingTeam;
         _google = google.Value;
+        _meetingBaas = meetingBaas.Value;
         _logger = logger;
     }
 
@@ -79,6 +89,8 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         if (existingForUser is not null)
         {
             existingForUser.OAuthRefreshToken = request.OAuthRefreshToken;
+            if (!string.IsNullOrWhiteSpace(request.AccountEmail))
+                existingForUser.AccountEmail = request.AccountEmail.Trim();
             existingForUser.UpdatedAt = DateTimeOffset.UtcNow;
             _connections.Upsert(existingForUser);
             try
@@ -90,6 +102,7 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
                 _logger.LogWarning(ex, "Calendar sync after reconnect (local) failed; user can use Sync now.");
             }
 
+            SyncUserCalendarFlags(request.UserId, existingForUser);
             return MapConn(existingForUser);
         }
 
@@ -116,13 +129,25 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         };
         var res = await _mb.CreateCalendarConnectionAsync(mbReq, ct).ConfigureAwait(false);
         var externalCalId = res.Data?.CalendarId ?? res.Data?.Uuid;
+        string? adoptedAccountEmail = null;
         if (!res.Success || string.IsNullOrWhiteSpace(externalCalId))
         {
             if (IsCalendarAlreadyExistsConflict(res))
             {
-                externalCalId = await ResolveExternalCalendarIdFromMeetingBaasListAsync(request.RawCalendarId, ct).ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(externalCalId))
-                    _logger.LogInformation("Resolved existing Meeting BaaS calendar after create conflict (raw id {Raw}).", request.RawCalendarId);
+                var resolved = await ResolveExistingMeetingBaasCalendarAsync(
+                    request.RawCalendarId,
+                    request.AccountEmail,
+                    request.Provider,
+                    ct).ConfigureAwait(false);
+                if (resolved is not null)
+                {
+                    externalCalId = resolved.ExternalCalendarId;
+                    adoptedAccountEmail = resolved.AccountEmail;
+                    _logger.LogInformation(
+                        "Resolved existing Meeting BaaS calendar after create conflict (raw id {Raw}, email {Email}).",
+                        request.RawCalendarId,
+                        adoptedAccountEmail ?? "(none)");
+                }
             }
 
             if (string.IsNullOrWhiteSpace(externalCalId))
@@ -147,6 +172,8 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             byExternal.OAuthRefreshToken = request.OAuthRefreshToken;
             byExternal.IntegrationCredentialsId = credId;
             byExternal.Status = "connected";
+            byExternal.AccountEmail = adoptedAccountEmail
+                ?? (string.IsNullOrWhiteSpace(request.AccountEmail) ? byExternal.AccountEmail : request.AccountEmail.Trim());
             byExternal.UpdatedAt = DateTimeOffset.UtcNow;
             _connections.Upsert(byExternal);
             try
@@ -158,6 +185,7 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
                 _logger.LogWarning(ex, "Initial calendar sync after connect failed; user can use Sync now.");
             }
 
+            SyncUserCalendarFlags(request.UserId, byExternal);
             return MapConn(byExternal);
         }
 
@@ -171,6 +199,8 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             RawCalendarId = request.RawCalendarId,
             OAuthRefreshToken = request.OAuthRefreshToken,
             IntegrationCredentialsId = credId,
+            AccountEmail = adoptedAccountEmail
+                ?? (string.IsNullOrWhiteSpace(request.AccountEmail) ? null : request.AccountEmail.Trim()),
             Status = "connected",
             LastSyncedAt = null,
             CreatedAt = now,
@@ -185,6 +215,7 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         {
             _logger.LogWarning(ex, "Initial calendar sync after connect failed; user can use Sync now.");
         }
+        SyncUserCalendarFlags(request.UserId, conn);
         return MapConn(conn);
     }
 
@@ -198,18 +229,123 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
                || blob.Contains("Conflict", StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<string?> ResolveExternalCalendarIdFromMeetingBaasListAsync(string rawCalendarId, CancellationToken ct)
+    private sealed record MeetingBaasCalendarRef(string ExternalCalendarId, string? AccountEmail);
+
+    /// <summary>
+    /// Meeting BaaS <c>GET /v2/calendars</c> often returns <c>account_email</c> but not <c>raw_calendar_id</c>, so we match by email,
+    /// platform filter, and single-connection heuristics after <c>POST /v2/calendars</c> conflicts.
+    /// </summary>
+    private async Task<MeetingBaasCalendarRef?> ResolveExistingMeetingBaasCalendarAsync(
+        string rawCalendarId,
+        string? accountEmail,
+        CalendarProvider provider,
+        CancellationToken ct)
     {
-        var list = await _mb.ListCalendarsAsync(ct).ConfigureAwait(false);
-        if (!list.Success || list.Data is null || list.Data.Count == 0)
+        var platform = provider == CalendarProvider.Google ? "google" : "microsoft";
+        var trimmedRaw = rawCalendarId.Trim();
+        var trimmedEmail = accountEmail?.Trim();
+
+        IReadOnlyList<CalendarListItemData> items = Array.Empty<CalendarListItemData>();
+
+        if (!string.IsNullOrWhiteSpace(trimmedEmail))
+        {
+            var targeted = await _mb.ListCalendarsAsync(
+                    new ListCalendarsQuery { AccountEmail = trimmedEmail, CalendarPlatform = platform, Limit = 50 },
+                    ct)
+                .ConfigureAwait(false);
+            if (targeted is { Success: true, Data: { Count: > 0 } })
+                items = targeted.Data;
+        }
+
+        if (items.Count == 0)
+        {
+            var broad = await _mb.ListCalendarsAsync(new ListCalendarsQuery { CalendarPlatform = platform, Limit = 50 }, ct)
+                .ConfigureAwait(false);
+            if (broad is { Success: true, Data: { Count: > 0 } })
+                items = broad.Data;
+        }
+
+        if (items.Count == 0)
+        {
+            var all = await _mb.ListCalendarsAsync(null, ct).ConfigureAwait(false);
+            if (all is { Success: true, Data: { Count: > 0 } })
+                items = all.Data;
+        }
+
+        if (items.Count == 0)
             return null;
-        var match = list.Data.FirstOrDefault(c =>
-            string.Equals(c.RawCalendarId, rawCalendarId, StringComparison.Ordinal));
-        return match?.CalendarId ?? match?.Uuid;
+
+        static string? ExternalId(CalendarListItemData c) =>
+            !string.IsNullOrWhiteSpace(c.CalendarId) ? c.CalendarId : c.Uuid;
+
+        CalendarListItemData? MatchRaw() =>
+            items.FirstOrDefault(c =>
+                !string.IsNullOrWhiteSpace(c.RawCalendarId)
+                && string.Equals(c.RawCalendarId.Trim(), trimmedRaw, StringComparison.OrdinalIgnoreCase));
+
+        CalendarListItemData? MatchEmail() =>
+            string.IsNullOrWhiteSpace(trimmedEmail)
+                ? null
+                : items.FirstOrDefault(c =>
+                    !string.IsNullOrWhiteSpace(c.AccountEmail)
+                    && string.Equals(c.AccountEmail.Trim(), trimmedEmail, StringComparison.OrdinalIgnoreCase));
+
+        var chosen = MatchRaw() ?? MatchEmail();
+        if (chosen is null && items.Count == 1)
+            chosen = items[0];
+
+        if (chosen is null)
+            return null;
+
+        var ext = ExternalId(chosen);
+        return string.IsNullOrWhiteSpace(ext)
+            ? null
+            : new MeetingBaasCalendarRef(ext, chosen.AccountEmail?.Trim());
     }
 
-    public Task<IReadOnlyList<CalendarConnectionDto>> ListAsync(CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<CalendarConnectionDto>>(_connections.GetAll().Select(MapConn).ToList());
+    public Task<IReadOnlyList<CalendarConnectionDto>> ListAsync(Guid userId, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<CalendarConnectionDto>>(_connections.ListForUser(userId).Select(MapConn).ToList());
+
+    public async Task DisconnectAsync(Guid connectionId, Guid userId, CancellationToken ct)
+    {
+        var conn = _connections.GetById(connectionId) ?? throw new KeyNotFoundException("Calendar connection not found.");
+        if (conn.UserId != userId)
+            throw new InvalidOperationException("You cannot disconnect another user's calendar.");
+
+        try
+        {
+            var del = await _mb.DeleteCalendarConnectionAsync(conn.ExternalCalendarId, ct).ConfigureAwait(false);
+            if (!del.Success)
+                _logger.LogWarning("Meeting BaaS delete calendar returned {Code}: {Err}", del.StatusCode, del.ErrorMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Meeting BaaS delete calendar threw for {ExternalId}", conn.ExternalCalendarId);
+        }
+
+        _events.RemoveByCalendarConnection(connectionId);
+        _connections.Remove(connectionId);
+
+        var u = _users.GetTrackedById(userId);
+        if (u is not null &&
+            string.Equals(u.MeetingBaasCalendarId, conn.ExternalCalendarId, StringComparison.Ordinal))
+        {
+            u.IsCalendarConnected = false;
+            u.MeetingBaasCalendarId = null;
+            u.CalendarProvider = null;
+            _users.Upsert(u);
+        }
+    }
+
+    private void SyncUserCalendarFlags(Guid userId, CalendarConnection c)
+    {
+        var u = _users.GetTrackedById(userId);
+        if (u is null) return;
+        u.IsCalendarConnected = true;
+        u.MeetingBaasCalendarId = c.ExternalCalendarId;
+        u.CalendarProvider = c.Provider == CalendarProvider.Google ? "google" : "outlook";
+        _users.Upsert(u);
+    }
 
     public Task<CalendarConnectionDto?> GetAsync(Guid id, CancellationToken ct)
     {
@@ -243,12 +379,15 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
     public async Task<ScheduleCalendarBotResponseDto> ScheduleBotAsync(Guid calendarId, ScheduleCalendarBotRequestDto body, CancellationToken ct)
     {
         var cal = _connections.GetById(calendarId) ?? throw new KeyNotFoundException("Calendar connection not found.");
+        var botName = string.IsNullOrWhiteSpace(body.BotName) ? _meetingBaas.DefaultBotName : body.BotName.Trim();
         var req = new ScheduleCalendarBotRequest
         {
             EventId = body.EventId,
             SeriesId = body.SeriesId,
             AllOccurrences = body.AllOccurrences,
-            BotName = body.BotName,
+            BotName = botName,
+            BotImage = string.IsNullOrWhiteSpace(_meetingBaas.BotImageUrl) ? null : _meetingBaas.BotImageUrl.Trim(),
+            EntryMessage = string.IsNullOrWhiteSpace(_meetingBaas.BotEntryMessage) ? null : _meetingBaas.BotEntryMessage.Trim(),
             RecordingMode = body.RecordingMode ?? "speaker_view"
         };
         var res = await _mb.ScheduleBotForEventAsync(cal.ExternalCalendarId, req, ct).ConfigureAwait(false);
@@ -258,9 +397,13 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
         var ev = _events.FindByExternal(calendarId, body.EventId);
         var now = DateTimeOffset.UtcNow;
         var meetingId = Guid.NewGuid();
+        var organizer = _users.GetById(cal.UserId);
+        var teamId = _meetingTeam.ResolveTeamForNewMeeting(cal.UserId, organizer?.WorkspaceId, null);
         var meeting = new Meeting
         {
             Id = meetingId,
+            WorkspaceId = organizer?.WorkspaceId,
+            TeamId = teamId,
             OrganizerUserId = cal.UserId,
             Title = ev?.Title ?? $"Calendar event {body.EventId}",
             Platform = InferPlatform(ev?.MeetingUrl),
@@ -273,6 +416,7 @@ public sealed class CalendarWorkflowService : ICalendarWorkflowService
             CreatedAt = now,
             UpdatedAt = now
         };
+        MeetingDomainStateMachine.MarkMeetingScheduled(meeting, now);
         _meetings.Upsert(meeting);
         if (ev is not null)
         {

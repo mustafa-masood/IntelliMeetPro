@@ -10,6 +10,9 @@ public sealed class InMemoryCalendarConnectionRepository : ICalendarConnectionRe
 
     public IReadOnlyList<CalendarConnection> GetAll() => _store.Values.OrderBy(c => c.CreatedAt).ToList();
 
+    public IReadOnlyList<CalendarConnection> ListForUser(Guid userId) =>
+        _store.Values.Where(c => c.UserId == userId).OrderBy(c => c.CreatedAt).ToList();
+
     public CalendarConnection? GetById(Guid id) => _store.GetValueOrDefault(id);
 
     public CalendarConnection? GetByExternalId(string externalCalendarId) =>

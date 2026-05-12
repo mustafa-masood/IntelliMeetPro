@@ -1,20 +1,94 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { TryNowLink } from './TryNowLink';
 
 const HomePage: React.FC = () => {
+  // Phase-1 SaaS landing (new flow). Legacy marketing UI remains below but is intentionally bypassed.
+  return (
+    <div className="min-h-[100dvh] bg-bg-surface-lv1">
+      <header className="w-full border-b border-stroke-primary bg-bg-surface-pure/90 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img
+              src="/src/assets/intellimeet-logo-light.png"
+              alt="IntelliMeet"
+              className="w-8 h-8 rounded-8 object-contain"
+            />
+            <span className="font-inter font-semibold text-lg text-text-primary tracking-[-0.48px]">
+              IntelliMeet
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/pricing" className="text-sm font-inter text-text-secondary hover:text-text-primary no-underline">
+              Pricing
+            </Link>
+            <TryNowLink className="bg-primary-500 text-white px-5 py-2 rounded-10 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline">
+              Try now
+            </TryNowLink>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-stroke-primary bg-bg-surface-pure px-3 py-1 text-xs font-inter text-text-secondary">
+              AI meeting notes · bots · action items
+            </div>
+            <h1 className="mt-4 font-inter-tight text-4xl md:text-5xl font-semibold text-text-primary tracking-[-0.8px]">
+              Turn meetings into decisions — automatically.
+            </h1>
+            <p className="mt-4 text-base md:text-lg font-inter text-text-secondary max-w-xl">
+              Connect your calendar, let the bot join, and get transcripts, summaries, and action items in one place.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <TryNowLink className="bg-primary-500 text-white px-7 py-3 rounded-12 font-inter font-medium text-sm hover:bg-primary-600 transition-colors text-center no-underline">
+                Get started
+              </TryNowLink>
+              <Link
+                to="/meetings"
+                className="bg-bg-surface-pure border border-stroke-primary text-text-primary px-7 py-3 rounded-12 font-inter font-medium text-sm hover:bg-bg-surface-lv1 transition-colors text-center no-underline"
+              >
+                Open app
+              </Link>
+            </div>
+            <p className="mt-3 text-xs text-text-tertiary font-inter">
+              Try now → Clerk → Choose plan → Stripe (paid) → Dashboard
+            </p>
+          </div>
+
+          <div className="rounded-16 border border-stroke-primary bg-bg-surface-pure p-6 shadow-card">
+            <p className="font-inter text-sm text-text-secondary m-0 mb-4">Phase 1</p>
+            <ul className="m-0 p-0 list-none grid gap-3 text-sm font-inter text-text-primary">
+              <li className="flex gap-2">
+                <span className="text-primary-600 font-semibold">•</span> Basic (free) or Stripe checkout for paid tiers
+              </li>
+              <li className="flex gap-2">
+                <span className="text-primary-600 font-semibold">•</span> Personal dashboard scoped to your workspace
+              </li>
+              <li className="flex gap-2">
+                <span className="text-primary-600 font-semibold">•</span> Meetings, transcripts, RAG and action items preserved
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+
   // Allow scrolling on the homepage
   useEffect(() => {
     const root = document.getElementById('root');
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = '';
     if (root) {
-      root.style.overflow = 'auto';
-      root.style.height = 'auto';
+      root.style.overflow = '';
+      root.style.height = '';
     }
     return () => {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = '';
       if (root) {
-        root.style.overflow = 'hidden';
-        root.style.height = '100vh';
+        root.style.overflow = '';
+        root.style.height = '';
       }
     };
   }, []);
@@ -44,12 +118,11 @@ const HomePage: React.FC = () => {
             Customers
           </Link>
         </nav>
-        <Link
-          to="/signin"
+        <TryNowLink
           className="bg-primary-500 text-white px-6 py-2 rounded-8 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline"
         >
-          Try Now
-        </Link>
+          Try now
+        </TryNowLink>
       </header>
 
       {/* Hero Section */}
@@ -66,12 +139,9 @@ const HomePage: React.FC = () => {
               With IntelliMeet, you can summarize and take notes of your meetings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/signin"
-                className="bg-primary-500 text-white px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-primary-600 transition-colors text-center no-underline"
-              >
-                Try Now
-              </Link>
+              <TryNowLink className="bg-primary-500 text-white px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-primary-600 transition-colors text-center no-underline">
+                Try now
+              </TryNowLink>
               <button className="bg-white border border-stroke-secondary text-text-primary px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-bg-surface-lv1 transition-colors">
                 Watch Demo
               </button>
@@ -263,12 +333,9 @@ const HomePage: React.FC = () => {
               Smart join technology that follows your meeting links
             </li>
           </ul>
-          <Link
-            to="/signin"
-            className="inline-block bg-primary-500 text-white px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-primary-600 transition-colors no-underline"
-          >
-            Learn More
-          </Link>
+          <TryNowLink className="inline-block bg-primary-500 text-white px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-primary-600 transition-colors no-underline">
+            Learn more
+          </TryNowLink>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-bg-surface-lv1 rounded-12 p-6 border border-stroke-primary">
@@ -327,12 +394,9 @@ const HomePage: React.FC = () => {
                   <span className="font-inter text-sm text-text-secondary">Basic analytics and visuals</span>
                 </li>
               </ul>
-              <Link
-                to="/signin"
-                className="block w-full bg-primary-500 text-white text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline"
-              >
-                Choose Plan
-              </Link>
+              <TryNowLink className="block w-full bg-primary-500 text-white text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline">
+                Choose plan
+              </TryNowLink>
             </div>
 
             {/* Pro Plan */}
@@ -372,12 +436,9 @@ const HomePage: React.FC = () => {
                   <span className="font-inter text-sm">Custom AI training</span>
                 </li>
               </ul>
-              <Link
-                to="/signin"
-                className="block w-full bg-white text-primary-500 text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-bg-surface-lv1 transition-colors no-underline"
-              >
-                Choose Plan
-              </Link>
+              <TryNowLink className="block w-full bg-white text-primary-500 text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-bg-surface-lv1 transition-colors no-underline">
+                Choose plan
+              </TryNowLink>
             </div>
 
             {/* Enterprise Plan */}
@@ -405,12 +466,9 @@ const HomePage: React.FC = () => {
                   <span className="font-inter text-sm text-text-secondary">Custom AI training</span>
                 </li>
               </ul>
-              <Link
-                to="/signin"
-                className="block w-full bg-primary-500 text-white text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline"
-              >
+              <TryNowLink className="block w-full bg-primary-500 text-white text-center px-6 py-3 rounded-8 font-inter font-medium text-sm hover:bg-primary-600 transition-colors no-underline">
                 Contact for pricing
-              </Link>
+              </TryNowLink>
             </div>
           </div>
         </div>
@@ -474,12 +532,9 @@ const HomePage: React.FC = () => {
           <p className="text-lg mb-8 font-inter opacity-90">
             Stop letting valuable insights slip through the cracks. Start capturing the complete picture with IntelliMeet. Try it free for 14 days – no credit card required.
           </p>
-          <Link
-            to="/signin"
-            className="inline-block bg-white text-primary-500 px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-bg-surface-lv1 transition-colors no-underline"
-          >
+          <TryNowLink className="inline-block bg-white text-primary-500 px-8 py-4 rounded-8 font-inter font-medium text-base hover:bg-bg-surface-lv1 transition-colors no-underline">
             Try for free
-          </Link>
+          </TryNowLink>
         </div>
       </section>
 

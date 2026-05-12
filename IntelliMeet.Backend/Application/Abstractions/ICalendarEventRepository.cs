@@ -10,4 +10,5 @@ public interface ICalendarEventRepository
     void Upsert(CalendarEvent evt);
     void UpsertMany(IReadOnlyList<CalendarEvent> events);
     IReadOnlyList<CalendarEvent> GetUpcoming(Guid calendarConnectionId, DateTimeOffset now, int take);
+    void RemoveByCalendarConnection(Guid calendarConnectionId);
 }

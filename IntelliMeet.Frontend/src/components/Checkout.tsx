@@ -36,7 +36,7 @@ const Checkout: React.FC = () => {
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure">
+        <div className="flex min-h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto bg-bg-surface-pure">
             {/* Left Column - Checkout Form */}
             <div className="flex-1 flex items-center justify-center p-6 bg-bg-surface-lv2 rounded-24">
                 <div className="w-full max-w-7xl flex gap-16">

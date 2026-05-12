@@ -11,4 +11,5 @@ public interface IMeetingsApiService
     Task<IReadOnlyList<ActionItemDto>> GetActionItemsAsync(Guid id, CancellationToken ct);
     Task<TodoItemDto> ConvertActionItemToTodoAsync(Guid meetingId, Guid actionItemId, Guid? userId, string? type, CancellationToken ct);
     Task<ActionItemDto> AssignTaskAsync(Guid meetingId, AssignTaskRequestDto body, CancellationToken ct);
+    Task<ActionItemDto> AssignActionItemUserAsync(Guid meetingId, Guid actionItemId, AssignActionItemUserRequestDto body, CancellationToken ct);
 }

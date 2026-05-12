@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 const EmailCheck: React.FC = () => {
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure">
-            <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex min-h-[100dvh] w-full max-w-full flex-col lg:flex-row overflow-x-hidden overflow-y-auto bg-bg-surface-pure">
+            <div className="flex-1 flex min-h-0 items-center justify-center p-6 py-10 lg:py-6">
                 <div className="w-full max-w-[587px] flex flex-col gap-6 items-center">
                     <div className="flex flex-col gap-4 items-center">
                         <div className="w-[172px] h-[128px] relative flex items-center justify-center">
@@ -32,7 +32,7 @@ const EmailCheck: React.FC = () => {
                     </p>
                 </div>
             </div>
-            <div className="flex-1 bg-bg-surface-lv2 flex flex-col items-center justify-center gap-8 px-0 py-[180px] rounded-24 relative overflow-hidden">
+            <div className="flex-1 min-h-0 bg-bg-surface-lv2 flex flex-col items-center justify-center gap-8 px-4 py-12 lg:py-[180px] rounded-24 relative overflow-y-auto overflow-x-hidden">
                 <div className="flex flex-col gap-8 items-center max-w-[500px] text-center">
                     <div className="flex flex-col gap-5">
                         <h2 className="font-inter-tight font-medium text-[40px] text-text-primary tracking-[-0.4px] m-0">

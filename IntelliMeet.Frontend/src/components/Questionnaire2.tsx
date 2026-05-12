@@ -13,16 +13,16 @@ const Questionnaire2: React.FC = () => {
 
     const handleNext = () => {
         if (selectedRole) {
-            navigate('/signup/questionnaire-3');
+            navigate('/onboarding/questionnaire-3');
         }
     };
 
     const handleBack = () => {
-        navigate('/signup/questionnaire-1');
+        navigate('/onboarding/questionnaire-1');
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure items-center justify-center">
+        <div className="flex min-h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto bg-bg-surface-pure items-center justify-center p-6">
             <div className="w-full max-w-[800px] flex flex-col gap-6 items-center p-6">
                 {/* Logo */}
                 <div className="flex items-center justify-center mb-8">

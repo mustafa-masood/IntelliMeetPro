@@ -16,8 +16,8 @@ const CreateNewPassword: React.FC = () => {
     };
 
     return (
-        <div className="flex w-screen h-screen bg-bg-surface-pure">
-            <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex min-h-[100dvh] w-full max-w-full flex-col lg:flex-row overflow-x-hidden overflow-y-auto bg-bg-surface-pure">
+            <div className="flex-1 flex min-h-0 items-center justify-center p-6 py-10 lg:py-6">
                 <div className="w-full max-w-[587px] flex flex-col gap-6">
                     <div className="flex items-center gap-2 mb-4">
                         <Link to="/forgot-password/email-check" className="flex items-center gap-2 text-text-primary hover:text-primary-500 transition-colors no-underline">
@@ -110,7 +110,7 @@ const CreateNewPassword: React.FC = () => {
                     </form>
                 </div>
             </div>
-            <div className="flex-1 bg-bg-surface-lv2 flex flex-col items-center justify-center gap-8 px-0 py-[180px] rounded-24 relative overflow-hidden">
+            <div className="flex-1 min-h-0 bg-bg-surface-lv2 flex flex-col items-center justify-center gap-8 px-4 py-12 lg:py-[180px] rounded-24 relative overflow-y-auto overflow-x-hidden">
                 <div className="flex flex-col gap-8 items-center max-w-[500px] text-center">
                     <div className="flex flex-col gap-5">
                         <h2 className="font-inter-tight font-medium text-[40px] text-text-primary tracking-[-0.4px] m-0">

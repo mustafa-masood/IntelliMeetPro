@@ -33,6 +33,12 @@ public sealed class CreateBotRequest
     [JsonPropertyName("bot_name")]
     public string BotName { get; set; } = string.Empty;
 
+    [JsonPropertyName("bot_image")]
+    public string? BotImage { get; set; }
+
+    [JsonPropertyName("entry_message")]
+    public string? EntryMessage { get; set; }
+
     [JsonPropertyName("recording_mode")]
     public string? RecordingMode { get; set; }
 
@@ -53,6 +59,12 @@ public sealed class ScheduledBotRequest
 
     [JsonPropertyName("bot_name")]
     public string BotName { get; set; } = string.Empty;
+
+    [JsonPropertyName("bot_image")]
+    public string? BotImage { get; set; }
+
+    [JsonPropertyName("entry_message")]
+    public string? EntryMessage { get; set; }
 
     [JsonPropertyName("recording_mode")]
     public string? RecordingMode { get; set; }
@@ -237,8 +249,28 @@ public sealed class CalendarListItemData
     [JsonPropertyName("raw_calendar_id")]
     public string? RawCalendarId { get; set; }
 
+    [JsonPropertyName("calendar_platform")]
+    public string? CalendarPlatform { get; set; }
+
+    [JsonPropertyName("account_email")]
+    public string? AccountEmail { get; set; }
+
     [JsonPropertyName("status")]
     public string? Status { get; set; }
+}
+
+/// <summary>Optional filters for <c>GET /v2/calendars</c> (Meeting BaaS v2).</summary>
+public sealed class ListCalendarsQuery
+{
+    public int Limit { get; init; } = 50;
+
+    public string? Cursor { get; init; }
+
+    public string? AccountEmail { get; init; }
+
+    public string? CalendarPlatform { get; init; }
+
+    public string? Status { get; init; }
 }
 
 public sealed class CalendarDetailData
@@ -313,6 +345,12 @@ public sealed class ScheduleCalendarBotRequest
 
     [JsonPropertyName("bot_name")]
     public string BotName { get; set; } = string.Empty;
+
+    [JsonPropertyName("bot_image")]
+    public string? BotImage { get; set; }
+
+    [JsonPropertyName("entry_message")]
+    public string? EntryMessage { get; set; }
 
     [JsonPropertyName("recording_mode")]
     public string? RecordingMode { get; set; }

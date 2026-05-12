@@ -12,5 +12,24 @@ public sealed class InMemoryUserRepository : IUserRepository
 
     public User? GetById(Guid id) => _store.GetValueOrDefault(id);
 
+    public User? GetByEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var e = email.Trim();
+        return _store.Values.FirstOrDefault(u => string.Equals(u.Email, e, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public User? GetByExternalUserId(string externalUserId) =>
+        string.IsNullOrWhiteSpace(externalUserId)
+            ? null
+            : _store.Values.FirstOrDefault(u => u.ExternalUserId == externalUserId);
+
+    public User? GetTrackedById(Guid id) => GetById(id);
+
+    public IReadOnlyList<User> GetUsersWithGoogleCalendarConnected() =>
+        _store.Values
+            .Where(u => u.CalendarConnected && !string.IsNullOrEmpty(u.GoogleAccessToken))
+            .ToList();
+
     public void Upsert(User user) => _store[user.Id] = user;
 }

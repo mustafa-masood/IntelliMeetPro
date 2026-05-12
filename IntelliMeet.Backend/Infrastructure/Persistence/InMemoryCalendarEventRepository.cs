@@ -31,4 +31,10 @@ public sealed class InMemoryCalendarEventRepository : ICalendarEventRepository
             .OrderBy(e => e.StartUtc)
             .Take(take)
             .ToList();
+
+    public void RemoveByCalendarConnection(Guid calendarConnectionId)
+    {
+        foreach (var id in _store.Values.Where(e => e.CalendarConnectionId == calendarConnectionId).Select(e => e.Id).ToList())
+            _store.TryRemove(id, out _);
+    }
 }

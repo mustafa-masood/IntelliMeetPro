@@ -12,6 +12,8 @@ public sealed class MeetingListItemDto
     public DateTimeOffset? StartUtc { get; init; }
     public DateTimeOffset? EndUtc { get; init; }
     public string? PrimaryBotStatus { get; init; }
+    public string? PrimaryBotStatusLabel { get; init; }
+    public string? ProcessingStatusLabel { get; init; }
 }
 
 public sealed class MeetingDetailDto
@@ -28,6 +30,18 @@ public sealed class MeetingDetailDto
     public IReadOnlyList<MeetingBotSummaryDto> Bots { get; init; } = Array.Empty<MeetingBotSummaryDto>();
     public string? AudioPlaybackUrl { get; init; }
     public IReadOnlyList<WebhookHistoryItemDto> RecentWebhooks { get; init; } = Array.Empty<WebhookHistoryItemDto>();
+
+    public MeetingProcessingStatus ProcessingStatus { get; init; }
+    public string? LifecycleStatusLabel { get; init; }
+    public string? ProcessingStatusLabel { get; init; }
+    public bool TranscriptAnalysisCompleted { get; init; }
+    public string? AnalysisError { get; init; }
+    public DateTimeOffset? RagIndexedAtUtc { get; init; }
+
+    /// <summary>Optional aggregate payload so the UI can render details from a single GET.</summary>
+    public TranscriptDto? Transcript { get; init; }
+    public MeetingSummaryDto? Summary { get; init; }
+    public IReadOnlyList<ActionItemDto> ActionItems { get; init; } = Array.Empty<ActionItemDto>();
 }
 
 public sealed class MeetingBotSummaryDto
@@ -36,6 +50,8 @@ public sealed class MeetingBotSummaryDto
     public string ExternalBotId { get; init; } = string.Empty;
     public BotOperationalStatus Status { get; init; }
     public TranscriptStatus TranscriptionStatus { get; init; }
+    public string? StatusLabel { get; init; }
+    public string? TranscriptionStatusLabel { get; init; }
 }
 
 public sealed class WebhookHistoryItemDto
@@ -71,6 +87,8 @@ public sealed class MeetingSummaryDto
     public string ShortSummary { get; init; } = string.Empty;
     public IReadOnlyList<string> StructuredSections { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> KeyPoints { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Decisions { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Risks { get; init; } = Array.Empty<string>();
 }
 
 public sealed class ActionItemDto
@@ -84,6 +102,16 @@ public sealed class ActionItemDto
     public string Status { get; init; } = string.Empty;
     public bool AddToTodoChecked { get; init; }
     public Guid? LinkedTodoItemId { get; init; }
+    public string? ExternalTaskUrl { get; init; }
+    public ProjectManagementPlatform? SyncedPlatform { get; init; }
+    public Guid? AssignedUserId { get; init; }
+    public string? SuggestedAssigneeName { get; init; }
+    public float? SuggestedAssigneeConfidence { get; init; }
+}
+
+public sealed class AssignActionItemUserRequestDto
+{
+    public Guid? AssignedUserId { get; set; }
 }
 
 public sealed class AssignTaskRequestDto
@@ -101,4 +129,10 @@ public sealed class ConvertActionItemToTodoRequestDto
 {
     public Guid? UserId { get; set; }
     public string? TodoType { get; set; }
+}
+
+public sealed class AnalyzeMeetingRequestDto
+{
+    /// <summary>When true, re-run Ollama even if a prior analysis completed.</summary>
+    public bool Force { get; set; }
 }

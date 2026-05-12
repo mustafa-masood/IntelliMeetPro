@@ -1,6 +1,5 @@
 using IntelliMeet.Backend.Application.Abstractions;
 using IntelliMeet.Backend.Application.DTOs;
-using IntelliMeet.Backend.Application.Integration;
 using IntelliMeet.Backend.Domain.Entities;
 using IntelliMeet.Backend.Domain.Enums;
 
@@ -17,10 +16,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
     private readonly ITodoRepository _todos;
     private readonly IRecordingAssetRepository _recordings;
     private readonly IWebhookEventRepository _webhooks;
-    private readonly IMeetingBaasClient _mb;
-    private readonly IMeetingBaasArtifactApplier _artifacts;
-    private readonly IGroqAnalysisBackgroundTrigger _groqTrigger;
+    private readonly IMeetingBaasStateSynchronizer _mbSync;
     private readonly ITranscriptTextResolver _transcriptText;
+    private readonly ICurrentUserContext _currentUser;
     private readonly ILogger<MeetingsApiService> _logger;
 
     public MeetingsApiService(
@@ -33,10 +31,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
         ITodoRepository todos,
         IRecordingAssetRepository recordings,
         IWebhookEventRepository webhooks,
-        IMeetingBaasClient mb,
-        IMeetingBaasArtifactApplier artifacts,
-        IGroqAnalysisBackgroundTrigger groqTrigger,
+        IMeetingBaasStateSynchronizer mbSync,
         ITranscriptTextResolver transcriptText,
+        ICurrentUserContext currentUser,
         ILogger<MeetingsApiService> logger)
     {
         _meetings = meetings;
@@ -48,18 +45,35 @@ public sealed class MeetingsApiService : IMeetingsApiService
         _todos = todos;
         _recordings = recordings;
         _webhooks = webhooks;
-        _mb = mb;
-        _artifacts = artifacts;
-        _groqTrigger = groqTrigger;
+        _mbSync = mbSync;
         _transcriptText = transcriptText;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
     public Task<IReadOnlyList<MeetingListItemDto>> ListAsync(CancellationToken ct)
     {
-        var list = _meetings.GetAll().Select(m =>
+        var meetings = (_currentUser.IsResolved && _currentUser.WorkspaceId != Guid.Empty
+                ? _meetings.ListForWorkspace(_currentUser.WorkspaceId)
+                : _meetings.GetAll())
+            .ToList();
+
+        // Enterprise members are scoped to their team; admins see all teams in the workspace.
+        if (_currentUser.IsResolved &&
+            _currentUser.WorkspaceId != Guid.Empty &&
+            _currentUser.Role == WorkspaceMemberRole.Member &&
+            _currentUser.TeamId.HasValue)
         {
-            var bot = _bots.GetByMeetingId(m.Id).FirstOrDefault();
+            meetings = meetings.Where(m => m.TeamId.HasValue && m.TeamId.Value == _currentUser.TeamId.Value).ToList();
+        }
+        var botsForMeetings = _bots.GetBotsForMeetingIds(meetings.Select(x => x.Id).ToList());
+        var firstBotByMeeting = botsForMeetings
+            .GroupBy(b => b.MeetingId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(b => b.Id).First());
+
+        var list = meetings.Select(m =>
+        {
+            firstBotByMeeting.TryGetValue(m.Id, out var bot);
             return new MeetingListItemDto
             {
                 Id = m.Id,
@@ -68,7 +82,9 @@ public sealed class MeetingsApiService : IMeetingsApiService
                 Status = m.Status,
                 StartUtc = m.StartUtc,
                 EndUtc = m.EndUtc,
-                PrimaryBotStatus = bot?.Status.ToString()
+                PrimaryBotStatus = bot?.Status.ToString(),
+                PrimaryBotStatusLabel = bot is null ? "Bot not started" : MeetingStatusTextMapper.BotStatus(bot.Status),
+                ProcessingStatusLabel = MeetingStatusTextMapper.ProcessingStatus(m.ProcessingStatus)
             };
         }).ToList();
         return Task.FromResult<IReadOnlyList<MeetingListItemDto>>(list);
@@ -79,13 +95,18 @@ public sealed class MeetingsApiService : IMeetingsApiService
         var m = _meetings.GetById(id);
         if (m is null)
             return null;
-        await SyncMeetingBaasStateAsync(m.Id, ct).ConfigureAwait(false);
+        if (!CanAccessMeeting(m))
+            return null;
+        await _mbSync.SyncMeetingAsync(m.Id, "api-read", ct).ConfigureAwait(false);
+        m = _meetings.GetById(id) ?? m;
         var bots = _bots.GetByMeetingId(m.Id).Select(b => new MeetingBotSummaryDto
         {
             Id = b.Id,
             ExternalBotId = b.ExternalBotId,
             Status = b.Status,
-            TranscriptionStatus = b.TranscriptionStatus
+            TranscriptionStatus = b.TranscriptionStatus,
+            StatusLabel = MeetingStatusTextMapper.BotStatus(b.Status),
+            TranscriptionStatusLabel = MeetingStatusTextMapper.TranscriptStatus(b.TranscriptionStatus)
         }).ToList();
         var audio = _recordings.GetByMeetingId(m.Id).FirstOrDefault(r => r.Kind.Equals("audio", StringComparison.OrdinalIgnoreCase))?.Url;
         var botIds = _bots.GetByMeetingId(m.Id).Select(b => b.ExternalBotId).Where(s => !string.IsNullOrEmpty(s));
@@ -103,7 +124,13 @@ public sealed class MeetingsApiService : IMeetingsApiService
                 });
             }
         }
+
         webhookItems = webhookItems.OrderByDescending(w => w.ReceivedAt).DistinctBy(w => w.Id).Take(10).ToList();
+
+        var transcript = await BuildTranscriptDtoAsync(m.Id, skipSync: true, ct).ConfigureAwait(false);
+        var summary = BuildSummaryDto(m.Id);
+        var actions = _actionItems.GetByMeetingId(m.Id).Select(MapActionItem).ToList();
+
         return new MeetingDetailDto
         {
             Id = m.Id,
@@ -117,102 +144,33 @@ public sealed class MeetingsApiService : IMeetingsApiService
             CalendarEventId = m.CalendarEventId,
             Bots = bots,
             AudioPlaybackUrl = audio,
-            RecentWebhooks = webhookItems
-        };
-    }
-
-    /// <summary>Pull bot status and, when relevant, full bot details + artifact URLs from Meeting BaaS (fallback when webhooks cannot reach localhost).</summary>
-    private async Task SyncMeetingBaasStateAsync(Guid meetingId, CancellationToken ct)
-    {
-        foreach (var bot in _bots.GetByMeetingId(meetingId))
-        {
-            if (string.IsNullOrWhiteSpace(bot.ExternalBotId))
-                continue;
-            try
-            {
-                var wasCompleted = bot.Status == BotOperationalStatus.Completed;
-
-                var st = await _mb.GetBotStatusAsync(bot.ExternalBotId, ct).ConfigureAwait(false);
-                if (!st.Success || st.Data is null)
-                    continue;
-
-                bot.Status = BotStatusMapper.FromMeetingBaas(st.Data.Status);
-                bot.TranscriptionStatus = BotStatusMapper.TranscriptionFromMeetingBaas(st.Data.TranscriptionStatus);
-                bot.UpdatedAt = DateTimeOffset.UtcNow;
-                _bots.Upsert(bot);
-
-                if (!ShouldFetchFullBotDetails(st.Data.Status))
-                    continue;
-
-                var details = await _mb.GetBotAsync(bot.ExternalBotId, ct).ConfigureAwait(false);
-                if (!details.Success || details.Data is null)
-                    continue;
-
-                ApplyMeetingAndBotFromBotDetails(meetingId, bot, details.Data);
-                var urlsNew = _artifacts.ApplyFromBotDetails(meetingId, details.Data);
-                var transitioned = !wasCompleted && bot.Status == BotOperationalStatus.Completed;
-                if (urlsNew || transitioned)
-                    _groqTrigger.EnqueueIfEnabled(meetingId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Skip Meeting BaaS sync for bot {BotId}", bot.ExternalBotId);
-            }
-        }
-    }
-
-    private void ApplyMeetingAndBotFromBotDetails(Guid meetingId, MeetingBot bot, BotDetailsData d)
-    {
-        var s = d.Status?.ToLowerInvariant();
-        if (s == "completed")
-        {
-            bot.Status = BotOperationalStatus.Completed;
-            bot.TranscriptionStatus = TranscriptStatus.Ready;
-            var m = _meetings.GetById(meetingId);
-            if (m is not null)
-            {
-                m.Status = MeetingStatus.Completed;
-                m.UpdatedAt = DateTimeOffset.UtcNow;
-                _meetings.Upsert(m);
-            }
-        }
-        else if (s == "failed")
-        {
-            bot.Status = BotOperationalStatus.Failed;
-            var m = _meetings.GetById(meetingId);
-            if (m is not null)
-            {
-                m.Status = MeetingStatus.Failed;
-                m.UpdatedAt = DateTimeOffset.UtcNow;
-                _meetings.Upsert(m);
-            }
-        }
-        else if (s == "transcribing")
-        {
-            bot.Status = BotOperationalStatus.Transcribing;
-            bot.TranscriptionStatus = TranscriptStatus.Processing;
-        }
-
-        bot.UpdatedAt = DateTimeOffset.UtcNow;
-        _bots.Upsert(bot);
-    }
-
-    private static bool ShouldFetchFullBotDetails(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            return false;
-        return status.ToLowerInvariant() switch
-        {
-            "completed" or "transcribing" or "failed" or "call_ended" or "recording_succeeded" => true,
-            _ => false
+            RecentWebhooks = webhookItems,
+            ProcessingStatus = m.ProcessingStatus,
+            LifecycleStatusLabel = MeetingStatusTextMapper.LifecycleStatus(m.Status),
+            ProcessingStatusLabel = MeetingStatusTextMapper.ProcessingStatus(m.ProcessingStatus),
+            TranscriptAnalysisCompleted = m.TranscriptAnalysisCompleted,
+            AnalysisError = m.AnalysisError,
+            RagIndexedAtUtc = m.RagIndexedAtUtc,
+            Transcript = transcript,
+            Summary = summary,
+            ActionItems = actions
         };
     }
 
     public async Task<TranscriptDto?> GetTranscriptAsync(Guid id, CancellationToken ct)
     {
-        if (_meetings.GetById(id) is null)
+        var m = _meetings.GetById(id);
+        if (!CanAccessMeeting(m))
             return null;
-        await SyncMeetingBaasStateAsync(id, ct).ConfigureAwait(false);
+        await _mbSync.SyncMeetingAsync(id, "api-read", ct).ConfigureAwait(false);
+        return await BuildTranscriptDtoAsync(id, skipSync: true, ct).ConfigureAwait(false);
+    }
+
+    private async Task<TranscriptDto> BuildTranscriptDtoAsync(Guid id, bool skipSync, CancellationToken ct)
+    {
+        if (!skipSync)
+            await _mbSync.SyncMeetingAsync(id, "api-read", ct).ConfigureAwait(false);
+
         var t = _transcripts.GetByMeetingId(id);
         if (t is null)
             return new TranscriptDto
@@ -223,7 +181,7 @@ public sealed class MeetingsApiService : IMeetingsApiService
             };
 
         var rawForDto = t.RawText;
-        if (string.IsNullOrWhiteSpace(rawForDto))
+        if (ShouldHydrateTranscriptText(rawForDto))
         {
             try
             {
@@ -260,42 +218,64 @@ public sealed class MeetingsApiService : IMeetingsApiService
         };
     }
 
-    public Task<MeetingSummaryDto?> GetSummaryAsync(Guid id, CancellationToken ct)
+    private static bool ShouldHydrateTranscriptText(string? rawText)
     {
-        if (_meetings.GetById(id) is null)
-            return Task.FromResult<MeetingSummaryDto?>(null);
+        if (string.IsNullOrWhiteSpace(rawText))
+            return true;
+        var t = rawText.TrimStart();
+        // Diyarization JSONL (speaker/start/end only) is not useful transcript text.
+        return t.StartsWith("{\"speaker\"", StringComparison.OrdinalIgnoreCase) && !t.Contains("\"text\"", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public async Task<MeetingSummaryDto?> GetSummaryAsync(Guid id, CancellationToken ct)
+    {
+        var m = _meetings.GetById(id);
+        if (!CanAccessMeeting(m))
+            return null;
+        await _mbSync.SyncMeetingAsync(id, "api-read", ct).ConfigureAwait(false);
+        return BuildSummaryDto(id);
+    }
+
+    private MeetingSummaryDto BuildSummaryDto(Guid id)
+    {
         var s = _summaries.GetByMeetingId(id);
         var kp = _keyPoints.GetByMeetingId(id).OrderBy(k => k.Order).Select(k => k.Text).ToList();
         if (s is null && kp.Count == 0)
-            return Task.FromResult<MeetingSummaryDto?>(new MeetingSummaryDto { MeetingId = id, KeyPoints = kp });
-        return Task.FromResult<MeetingSummaryDto?>(new MeetingSummaryDto
+            return new MeetingSummaryDto { MeetingId = id, KeyPoints = kp };
+        return new MeetingSummaryDto
         {
             MeetingId = id,
             ShortSummary = s?.ShortSummary ?? string.Empty,
             StructuredSections = s?.StructuredSections ?? Array.Empty<string>(),
-            KeyPoints = kp
-        });
+            KeyPoints = kp,
+            Decisions = s?.Decisions ?? Array.Empty<string>(),
+            Risks = s?.Risks ?? Array.Empty<string>()
+        };
     }
 
-    public Task<IReadOnlyList<ActionItemDto>> GetActionItemsAsync(Guid id, CancellationToken ct)
+    public async Task<IReadOnlyList<ActionItemDto>> GetActionItemsAsync(Guid id, CancellationToken ct)
     {
-        if (_meetings.GetById(id) is null)
-            return Task.FromResult<IReadOnlyList<ActionItemDto>>(Array.Empty<ActionItemDto>());
+        if (!CanAccessMeeting(_meetings.GetById(id)))
+            return Array.Empty<ActionItemDto>();
+        await _mbSync.SyncMeetingAsync(id, "api-read", ct).ConfigureAwait(false);
         var list = _actionItems.GetByMeetingId(id).Select(MapActionItem).ToList();
-        return Task.FromResult<IReadOnlyList<ActionItemDto>>(list);
+        return list;
     }
 
     public Task<TodoItemDto> ConvertActionItemToTodoAsync(Guid meetingId, Guid actionItemId, Guid? userId, string? type, CancellationToken ct)
     {
         var meeting = _meetings.GetById(meetingId) ?? throw new KeyNotFoundException("Meeting not found.");
+        if (!CanAccessMeeting(meeting))
+            throw new KeyNotFoundException("Meeting not found.");
         var item = _actionItems.GetById(actionItemId) ?? throw new KeyNotFoundException("Action item not found.");
         if (item.MeetingId != meetingId)
             throw new InvalidOperationException("Action item does not belong to this meeting.");
         var now = DateTimeOffset.UtcNow;
+        var todoUserId = userId ?? (_currentUser.IsResolved ? _currentUser.UserId : null);
         var todo = new TodoItem
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            UserId = todoUserId,
             Title = item.Title,
             Description = item.Description,
             Type = type ?? "action_item",
@@ -315,13 +295,15 @@ public sealed class MeetingsApiService : IMeetingsApiService
 
     public Task<ActionItemDto> AssignTaskAsync(Guid meetingId, AssignTaskRequestDto body, CancellationToken ct)
     {
-        if (_meetings.GetById(meetingId) is null)
+        var meeting = _meetings.GetById(meetingId) ?? throw new KeyNotFoundException("Meeting not found.");
+        if (!CanAccessMeeting(meeting))
             throw new KeyNotFoundException("Meeting not found.");
         var now = DateTimeOffset.UtcNow;
         var item = new ActionItem
         {
             Id = Guid.NewGuid(),
             MeetingId = meetingId,
+            WorkspaceId = meeting.WorkspaceId,
             Title = body.Title,
             Description = body.Description,
             Owner = body.Assignee,
@@ -335,6 +317,35 @@ public sealed class MeetingsApiService : IMeetingsApiService
         return Task.FromResult(MapActionItem(item));
     }
 
+    public Task<ActionItemDto> AssignActionItemUserAsync(Guid meetingId, Guid actionItemId, AssignActionItemUserRequestDto body, CancellationToken ct)
+    {
+        if (_currentUser.IsResolved && _currentUser.Role != WorkspaceMemberRole.Admin)
+            throw new InvalidOperationException("Only workspace admins can assign action items.");
+        var meeting = _meetings.GetById(meetingId) ?? throw new KeyNotFoundException("Meeting not found.");
+        if (!CanAccessMeeting(meeting))
+            throw new KeyNotFoundException("Meeting not found.");
+        var item = _actionItems.GetById(actionItemId) ?? throw new KeyNotFoundException("Action item not found.");
+        if (item.MeetingId != meetingId)
+            throw new InvalidOperationException("Action item does not belong to this meeting.");
+        item.AssignedUserId = body.AssignedUserId;
+        _actionItems.Upsert(item);
+        return Task.FromResult(MapActionItem(item));
+    }
+
+    private bool CanAccessMeeting(Meeting? m)
+    {
+        if (m is null) return false;
+        if (!_currentUser.IsResolved || _currentUser.WorkspaceId == Guid.Empty) return true;
+        if (!m.WorkspaceId.HasValue) return true;
+        if (m.WorkspaceId.Value != _currentUser.WorkspaceId) return false;
+
+        // Enterprise member must match team; fail closed if meeting has no team.
+        if (_currentUser.Role == WorkspaceMemberRole.Member && _currentUser.TeamId.HasValue)
+            return m.TeamId.HasValue && m.TeamId.Value == _currentUser.TeamId.Value;
+
+        return true;
+    }
+
     private static ActionItemDto MapActionItem(ActionItem a) => new()
     {
         Id = a.Id,
@@ -345,7 +356,12 @@ public sealed class MeetingsApiService : IMeetingsApiService
         Priority = a.Priority,
         Status = a.Status,
         AddToTodoChecked = a.AddToTodoChecked,
-        LinkedTodoItemId = a.LinkedTodoItemId
+        LinkedTodoItemId = a.LinkedTodoItemId,
+        ExternalTaskUrl = a.ExternalTaskUrl,
+        SyncedPlatform = a.SyncedPlatform,
+        AssignedUserId = a.AssignedUserId,
+        SuggestedAssigneeName = a.SuggestedAssigneeName,
+        SuggestedAssigneeConfidence = a.SuggestedAssigneeConfidence
     };
 
     private static TodoItemDto MapTodo(TodoItem t) => new()
