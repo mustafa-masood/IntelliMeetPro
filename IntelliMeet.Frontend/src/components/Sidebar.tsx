@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { label: 'Meetings', path: '/meetings', iconType: 'meetings' },
     { label: 'Calendar', path: '/calendar', iconType: 'calendar' },
     { label: "To-do's", path: '/todos', iconType: 'todos' },
-    { label: 'Ask AI (Experimental)', path: '/experimental/ask-ai', iconType: 'ask-ai' },
+    { label: 'Ask AI', path: '/experimental/ask-ai', iconType: 'ask-ai' },
   ];
 
   const renderIcon = (iconType: string, isActive: boolean) => {
@@ -352,19 +352,23 @@ const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </Link>
           </div>
+          
         </nav>
 
         {/* Plan Card */}
-        {planBadge ? (
-          <div className="mx-4 mb-4 flex flex-col gap-2 rounded-12 border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-            <div className="font-inter text-base font-medium leading-6 tracking-tight text-white">
-              {planBadge}
-            </div>
-            {me?.role ? (
-              <div className="font-inter font-normal text-xs text-neutral-300 leading-4">Role: {me.role}</div>
-            ) : null}
-          </div>
-        ) : null}
+     {planBadge ? (
+  <div className="mx-3 mb-3 flex flex-col gap-1 rounded-10 border border-white/10 bg-white/[0.04] px-3 py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] backdrop-blur-sm">
+    <div className="font-inter text-sm font-medium leading-5 tracking-tight text-white">
+      {planBadge}
+    </div>
+
+    {me?.role ? (
+      <div className="font-inter text-[11px] leading-4 text-neutral-400">
+        Role: {me.role}
+      </div>
+    ) : null}
+  </div>
+) : null}
 
         {/* Profile Section */}
         <div className="relative shrink-0 bg-neutral-900/80 px-4 py-4 sm:p-5">

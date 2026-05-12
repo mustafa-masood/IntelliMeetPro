@@ -633,9 +633,9 @@ const Meetings: React.FC = () => {
             />
 
             <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
-                <div className="sticky top-0 z-20 flex min-h-16 shrink-0 flex-wrap items-center gap-3 border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-2.5 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7">
+                {/* <div className="sticky top-0 z-20 flex min-h-16 shrink-0 flex-wrap items-center gap-3 border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-2.5 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7"> */}
                     {/* <SearchBar placeholder="Search meetings…" className="min-w-0 flex-1 sm:max-w-xs sm:flex-none" /> */}
-                    {usageSummary && (
+                    {/* {usageSummary && (
                         <div className="flex shrink-0 flex-wrap gap-2 font-inter text-[11px] text-text-secondary">
                             <span className="rounded-10 border border-stroke-primary bg-bg-surface-lv1/90 px-2.5 py-1 shadow-xs">
                                 Plan:{' '}
@@ -648,8 +648,8 @@ const Meetings: React.FC = () => {
                                 Chat: {usageSummary.chatThisMonth}/{usageSummary.chatLimit}
                             </span>
                         </div>
-                    )}
-                </div>
+                    )} */}
+                {/* </div> */}
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <Container className="py-2 sm:py-2 lg:py-2">
@@ -665,7 +665,7 @@ const Meetings: React.FC = () => {
                                 </button>
                             </div>
                         )}
-                        <div className="flex flex-col gap-4 sm:gap-6">
+                        <div className="flex flex-col gap-4 sm:gap-6 mt-8">
                             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between w-full mb-2">
                                 <div className="flex-1 w-full sm:w-auto">
                                     {/* <p className="text-[11px] font-inter font-medium uppercase tracking-wider text-text-tertiary m-0 mb-1">
