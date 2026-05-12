@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
 import MobileMenuButton from './MobileMenuButton';
-import SearchBar from './SearchBar';
+// import SearchBar from './SearchBar';
 import { imApi, type TodoItemDto } from '../api/intellimeet';
 
 const Todos: React.FC = () => {
@@ -52,9 +52,9 @@ const Todos: React.FC = () => {
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
             <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
-                <div className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
+                {/* <div className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
                     <SearchBar placeholder="Search to-dos…" className="w-full sm:w-72" />
-                </div>
+                </div> */}
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6">

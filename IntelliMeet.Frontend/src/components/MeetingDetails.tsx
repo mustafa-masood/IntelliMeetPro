@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
-import SearchBar from './SearchBar';
+// import SearchBar from './SearchBar';
 // import TeamCreationSidebar from './TeamCreationSidebar';
 import type { MeetingDetailsProps, PmPlatform } from '../types';
 import { Link } from 'react-router-dom';
@@ -133,9 +133,9 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
             <Sidebar />
 
             <div className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:ml-[270px] xl:mr-[190px]">
-                <div className="sticky top-0 z-[100] flex shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-3 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
+                {/* <div className="sticky top-0 z-[100] flex shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-3 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
                     <SearchBar placeholder="Search in workspace…" className="max-w-xl sm:w-96" />
-                </div>
+                </div> */}
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pt-5 sm:px-8">
                     <button

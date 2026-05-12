@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import Sidebar from './Sidebar';
 import MobileMenuButton from './MobileMenuButton';
-import SearchBar from './SearchBar';
+// import SearchBar from './SearchBar';
 import {
     ensureBackendUserId,
     googleCalendarConnectUrl,
@@ -189,9 +189,9 @@ const Calendar: React.FC = () => {
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
             <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
-                <div className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7">
+                {/* <div className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7">
                     <SearchBar placeholder="Search calendar & events…" className="max-w-full sm:w-72" />
-                </div>
+                </div> */}
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6">
