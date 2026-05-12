@@ -47,12 +47,12 @@ const Todos: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full im-app-canvas overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
             <MobileMenuButton isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
             <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-alpha-90 backdrop-blur-xl border-b border-stroke-primary h-14 flex items-center px-4 sm:px-8 shrink-0 shadow-card ring-1 ring-black/[0.02] dark:ring-white/[0.05]">
+                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-14 flex items-center px-4 sm:px-8 shrink-0">
                     <SearchBar placeholder="Search to-dos…" className="sm:w-72" />
                 </div>
 

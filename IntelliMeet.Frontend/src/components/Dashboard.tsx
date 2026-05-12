@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="flex h-[100dvh] min-h-0 max-h-[100dvh] im-app-canvas overflow-hidden">
+    <div className="flex h-[100dvh] min-h-0 max-h-[100dvh] bg-bg-surface-lv1 overflow-hidden">
       <MobileMenuButton 
         isOpen={isMobileMenuOpen} 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 

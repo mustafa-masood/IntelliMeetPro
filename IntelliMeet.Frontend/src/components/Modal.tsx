@@ -50,7 +50,7 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 backdrop-blur-md z-[1000] bg-[color:var(--overlay-scrim)] transition-opacity duration-300 motion-reduce:transition-none"
+        className="fixed inset-0 backdrop-blur backdrop-filter bg-[rgba(6,27,22,0.3)] z-[1000]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -62,13 +62,12 @@ const Modal: React.FC<ModalProps> = ({
           flex flex-col 
           overflow-hidden 
           rounded-12 sm:rounded-[14px] 
-          shadow-modal-premium ring-1 ring-stroke-primary/80
+          shadow-lg
           w-[calc(100%-2rem)] sm:w-full
           ${maxWidthClasses[maxWidth]}
           max-h-[90vh]
           overflow-y-auto
           z-[1001]
-          im-enter-active
           ${className}
         `}
         onClick={(e) => e.stopPropagation()}

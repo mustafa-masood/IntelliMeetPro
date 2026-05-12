@@ -329,40 +329,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="h-px bg-neutral-400 opacity-20 w-full" />
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col">
             <div className="font-inter font-medium text-xs text-neutral-400 tracking-[0.48px] uppercase px-3 py-1 pb-2">
               PREFERENCE
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                const root = document.documentElement;
-                const next = !root.classList.contains('dark');
-                root.classList.toggle('dark', next);
-                try {
-                  window.localStorage.setItem('im-color-mode', next ? 'dark' : 'light');
-                } catch {
-                  /* ignore */
-                }
-              }}
-              className="flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors w-full text-left border-0 bg-transparent hover:bg-white/5"
-              aria-label="Toggle light or dark appearance"
-            >
-              <span className="w-5 h-5 flex items-center justify-center text-neutral-300" aria-hidden>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 3v1M12 20v1M4.22 4.22l.7.7M18.36 18.36l.7.7M1 12h1M22 12h1M4.22 19.78l.7-.7M18.36 5.64l.7-.7"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
-              </span>
-              <span className="flex-1 font-inter font-medium text-sm tracking-[-0.084px] text-neutral-300">
-                Appearance
-              </span>
-            </button>
             <Link
               to="/deferred/app-integrations"
               className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
@@ -437,7 +407,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {isProfileDropdownOpen && (
             <div
               ref={profileDropdownRef}
-              className="absolute bottom-[88px] left-4 right-4 bg-bg-surface-pure border border-stroke-primary rounded-12 shadow-elevated z-[1001] overflow-hidden backdrop-blur-xl ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+              className="absolute bottom-[88px] left-4 right-4 bg-white border border-stroke-primary rounded-12 shadow-lg z-[1001] overflow-hidden"
               role="menu"
             >
               <div className="flex flex-col">
