@@ -132,10 +132,10 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
         <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full overflow-hidden bg-bg-surface-lv1 surface-gradient">
             <Sidebar />
 
-            <div className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:ml-[270px] xl:mr-[190px]">
-                <div className="sticky top-0 z-[100] flex shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-3 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
+            <div className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:ml-[270px] xl:mr-0">
+                {/* <div className="sticky top-0 z-[100] flex shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-3 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
                     <SearchBar placeholder="Search in workspace…" className="max-w-xl sm:w-96" />
-                </div>
+                </div> */}
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pt-5 sm:px-8">
                     <button
@@ -159,143 +159,127 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </span>
                 </div>
 
-                {meetingIdForApi && typeof meetingProcessingStatus === 'number' && (
-                <div className="shrink-0 px-4 pt-4 sm:px-8">
-                    <div
-                        className={`rounded-12 border px-4 py-3 font-inter text-sm ${
-                            meetingProcessingStatus === 5
-                                ? 'border-red-200/90 bg-red-50/95 text-red-900'
-                                : meetingProcessingStatus === 4 || meetingTranscriptAnalysisCompleted
-                                  ? 'border-emerald-200/90 bg-emerald-50/95 text-emerald-900'
-                                  : 'border-amber-200/90 bg-amber-50/95 text-amber-950'
-                        } shadow-xs`}
-                            role="status"
+            {(meetingIdForApi && typeof meetingProcessingStatus === 'number') ||
+meetingBots?.length ? (
+    <div className="shrink-0 px-4 pt-4 sm:px-8">
+        <div className="flex flex-wrap items-center gap-3 rounded-14 border border-stroke-primary bg-bg-surface-pure/95 px-4 py-3 shadow-xs backdrop-blur-sm">
+
+            {/* Pipeline Status */}
+            {meetingIdForApi && typeof meetingProcessingStatus === 'number' && (
+                <div
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-inter font-medium ${
+                        meetingProcessingStatus === 5
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : meetingProcessingStatus === 4 || meetingTranscriptAnalysisCompleted
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200'
+                    }`}
+                    role="status"
+                >
+                    <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+
+                    <span>
+                        {meetingProcessingStatusLabel ??
+                            PIPELINE_STATUS[meetingProcessingStatus] ??
+                            `Status (${meetingProcessingStatus})`}
+                    </span>
+                </div>
+            )}
+
+            {/* Error */}
+            {meetingAnalysisError && (
+                <span className="text-xs text-red-600 font-inter truncate">
+                    {meetingAnalysisError}
+                </span>
+            )}
+
+            {/* Divider */}
+            {meetingBots && meetingBots.length > 0 && (
+                <div className="h-4 w-px bg-stroke-primary hidden sm:block" />
+            )}
+
+            {/* Bots */}
+            {meetingBots && meetingBots.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-inter font-medium text-text-tertiary">
+                        Bots
+                    </span>
+
+                    {meetingBots.map((b) => (
+                        <div
+                            key={b.id}
+                            className="inline-flex items-center gap-2 rounded-full border border-stroke-primary bg-bg-surface-lv1 px-3 py-1 text-xs font-inter"
                         >
-                            <p className="m-0 font-semibold">
-                                {meetingProcessingStatusLabel
-                                    ?? PIPELINE_STATUS[meetingProcessingStatus]
-                                    ?? `Status (${meetingProcessingStatus})`}
-                            </p>
-                            {meetingAnalysisError ? (
-                                <p className="m-0 mt-1 text-xs opacity-90">{meetingAnalysisError}</p>
-                            ) : null}
-                        </div>
-                    </div>
-                )}
+                            <span
+                                className="truncate max-w-[90px] text-text-tertiary"
+                                title={b.externalBotId}
+                            >
+                                {b.externalBotId.slice(0, 8)}…
+                            </span>
 
-                {meetingUrl && (
-                    <div className="px-4 sm:px-8 pt-4 shrink-0">
-                        <div className="flex flex-col gap-4 rounded-16 border border-stroke-primary bg-gradient-to-br from-bg-surface-pure via-bg-surface-pure to-primary-50/25 p-4 shadow-float sm:flex-row sm:items-center sm:p-5 lg:gap-6">
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
-                                    Meeting link · Meeting BaaS
-                                </p>
-                                <p className="font-inter font-medium text-text-primary m-0 truncate text-sm sm:text-base">
-                                    {meetingUrl}
-                                </p>
-                                {meetingPlatform && (
-                                    <span className="inline-block mt-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-bg-surface-lv1 text-text-secondary border border-stroke-primary">
-                                        {meetingPlatform}
-                                    </span>
-                                )}
-                                {meetingLifecycleStatusLabel && (
-                                    <span className="inline-block mt-2 ml-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-primary-50 text-primary-700 border border-primary-200">
-                                        {meetingLifecycleStatusLabel}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap gap-2 shrink-0">
-                                <a
-                                    href={meetingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="rounded-10 bg-primary-500 px-4 py-2 text-center text-sm font-inter font-semibold text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md"
-                                >
-                                    Join meeting
-                                </a>
-                                <button
-                                    type="button"
-                                    onClick={() => void navigator.clipboard.writeText(meetingUrl)}
-                                    className="rounded-10 border border-stroke-secondary bg-bg-surface-pure px-4 py-2 text-sm font-inter font-medium text-text-primary transition-colors hover:border-primary-500/25 hover:bg-bg-surface-lv1"
-                                >
-                                    Copy link
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                            <span className="text-primary-600 font-medium">
+                                {b.statusLabel ??
+                                    BOT_STATUS[b.status] ??
+                                    `Status ${b.status}`}
+                            </span>
 
-                {meetingBots && meetingBots.length > 0 && (
-                    <div className="px-4 sm:px-8 pt-3 shrink-0">
-                        <div className="flex flex-wrap gap-2 items-center">
-                            <span className="text-xs font-inter font-medium text-text-secondary">IntelliMeet Pro bots</span>
-                            {meetingBots.map((b) => (
-                                <div
-                                    key={b.id}
-                                    className="flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-10 border border-stroke-primary bg-bg-surface-pure text-xs font-inter"
-                                >
-                                    <span className="text-text-tertiary truncate max-w-[140px]" title={b.externalBotId}>
-                                        {b.externalBotId.slice(0, 10)}…
-                                    </span>
-                                    <span className="text-primary-500 font-medium">
-                                        {b.statusLabel ?? BOT_STATUS[b.status] ?? `Status ${b.status}`}
-                                    </span>
-                                    <span className="text-text-tertiary">·</span>
-                                    <span className="text-text-secondary">
-                                        {b.transcriptionStatusLabel ?? TX_STATUS[b.transcriptionStatus] ?? 'Tx'}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                            <span className="text-text-disable">•</span>
 
+                            <span className="text-text-secondary">
+                                {b.transcriptionStatusLabel ??
+                                    TX_STATUS[b.transcriptionStatus] ??
+                                    'Tx'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    </div>
+) : null}
                 <div className="shrink-0 px-4 pt-4 sm:px-8">
                     <div className="inline-flex w-fit gap-1 rounded-12 border border-stroke-primary bg-bg-surface-lv1/90 p-1 shadow-xs backdrop-blur-sm sm:p-1.5">
                         <button
                             type="button"
                             onClick={() => setActiveTab('summary')}
-                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${
-                                activeTab === 'summary'
+                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${activeTab === 'summary'
                                     ? 'bg-bg-surface-pure text-text-primary shadow-float ring-1 ring-black/[0.04]'
                                     : 'text-text-secondary hover:bg-bg-surface-pure/60 hover:text-text-primary'
-                            }`}
+                                }`}
                         >
                             Summary
                         </button>
                         <button
                             type="button"
                             onClick={() => setActiveTab('transcription')}
-                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${
-                                activeTab === 'transcription'
+                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${activeTab === 'transcription'
                                     ? 'bg-bg-surface-pure text-text-primary shadow-float ring-1 ring-black/[0.04]'
                                     : 'text-text-secondary hover:bg-bg-surface-pure/60 hover:text-text-primary'
-                            }`}
+                                }`}
                         >
                             Transcription
                         </button>
                     </div>
                 </div>
-
-                <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-5 sm:px-8 xl:flex-row">
-                    <div className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float xl:min-h-0 xl:rounded-r-none xl:border-r-0">
+               <div className="flex min-h-0 flex-1 flex-col gap-5 px-4 py-5 sm:px-8 xl:flex-row">
+                    <div className="flex  min-w-0 flex-1 flex-col overflow-hidden rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float  xl:rounded-r-none xl:border-r-0">
                         {activeTab === 'summary' && (
-                            <div className="border-b border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/20 p-5 sm:p-6">
-                                <h1 className="font-inter-tight m-0 mb-2 text-2xl font-semibold leading-tight tracking-tight text-text-primary sm:text-[1.65rem]">
+                            <div className="border-b border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/20 p-2 sm:p-6">
+                                <h1 className="font-inter-tight m-0 mb-1 text-lg font-semibold leading-tight tracking-tight text-text-primary sm:text-[1.65rem]">
                                     {meetingTitle}
                                 </h1>
                                 {meetingDate && (
                                     <div className="flex items-center gap-2">
-                                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm bg-primary-500">
+                                        {/* <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-inter font-medium text-sm bg-primary-500">
                                             {meetingTitle.substring(0, 2).toUpperCase()}
-                                        </div>
+                                        </div> */}
                                         <span className="font-inter text-sm text-text-secondary">{meetingDate}</span>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+                        <div className=" flex-1 overflow-y-auto p-5 sm:p-6">
                             {activeTab === 'summary' ? (
                                 <div className="flex flex-col gap-6 max-w-2xl">
                                     <div>
@@ -572,31 +556,30 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                 const avatarColor = getAvatarColor(segment.speaker);
                                                 const isPrimary = avatarColor === '#3c91e6' || avatarColor === '#16a34a';
                                                 return (
-                                            <div key={`${segment.start}-${index}`} className="group rounded-12 border border-transparent px-2 py-2 transition-colors hover:border-stroke-primary hover:bg-bg-surface-lv1/60">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex items-center gap-2">
-                                                            <div
-                                                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-inter font-medium shrink-0 ${
-                                                                    isPrimary ? 'bg-primary-500 text-white' : 'text-text-primary'
-                                                                }`}
-                                                                style={!isPrimary ? { backgroundColor: avatarColor } : undefined}
-                                                            >
-                                                                {getInitials(segment.speaker)}
+                                                    <div key={`${segment.start}-${index}`} className="group rounded-12 border border-transparent px-2 py-2 transition-colors hover:border-stroke-primary hover:bg-bg-surface-lv1/60">
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div
+                                                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-inter font-medium shrink-0 ${isPrimary ? 'bg-primary-500 text-white' : 'text-text-primary'
+                                                                        }`}
+                                                                    style={!isPrimary ? { backgroundColor: avatarColor } : undefined}
+                                                                >
+                                                                    {getInitials(segment.speaker)}
+                                                                </div>
+                                                                <div className="flex min-w-0 items-center gap-2">
+                                                                    <span className="truncate font-inter text-sm font-medium text-text-primary">
+                                                                        {segment.speaker}
+                                                                    </span>
+                                                                    <span className="shrink-0 font-mono text-xs tabular-nums text-primary-600">
+                                                                        {formatTime(segment.start)}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex min-w-0 items-center gap-2">
-                                                                <span className="truncate font-inter text-sm font-medium text-text-primary">
-                                                                    {segment.speaker}
-                                                                </span>
-                                                                <span className="shrink-0 font-mono text-xs tabular-nums text-primary-600">
-                                                                    {formatTime(segment.start)}
-                                                                </span>
-                                                            </div>
+                                                            <p className="m-0 pl-10 font-inter text-sm leading-6 text-text-secondary">
+                                                                {segment.text}
+                                                            </p>
                                                         </div>
-                                                        <p className="m-0 pl-10 font-inter text-sm leading-6 text-text-secondary">
-                                                            {segment.text}
-                                                        </p>
                                                     </div>
-                                                </div>
                                                 );
                                             })
                                         ) : !showPlainTranscriptOnly ? (
@@ -611,8 +594,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                             )}
                         </div>
                     </div>
-
-                    <div className="hidden w-px shrink-0 bg-gradient-to-b from-transparent via-stroke-primary to-transparent xl:block" aria-hidden />
+  
 
                     <div className="flex max-h-[420px] min-h-[280px] w-full flex-col overflow-hidden rounded-16 border border-stroke-primary border-t-0 bg-bg-surface-pure/95 shadow-float backdrop-blur-md xl:h-auto xl:max-h-none xl:w-[min(380px,36vw)] xl:rounded-bl-none xl:rounded-tr-16 xl:border-l-0 xl:border-t">
                         <div className="flex items-center justify-between border-b border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/15 px-4 py-3">
@@ -643,22 +625,75 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </div>
                 </div>
 
-                    <div className="px-4 pb-8 pt-2 sm:px-8">
-                    <div className="flex flex-col gap-4 rounded-16 border border-stroke-primary bg-bg-surface-pure/95 px-4 py-4 shadow-float backdrop-blur-sm sm:flex-row sm:items-center sm:px-6 sm:py-5">
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-inter font-semibold text-text-tertiary uppercase tracking-wider m-0 mb-1">
-                                Recording playback
-                            </p>
-                            {audioPlaybackUrl ? (
-                                <audio className="w-full max-w-xl" controls src={audioPlaybackUrl} />
-                            ) : (
-                                <p className="font-inter text-sm text-text-secondary m-0">
-                                    No playback URL yet. When the bot completes and Meeting BaaS exposes media, it will show here.
+
+                {/* {meetingUrl && (
+                    <div className="px-4 sm:px-8 pt-4 shrink-0">
+                        <div className="flex flex-col gap-4 rounded-16 border border-stroke-primary bg-gradient-to-br from-bg-surface-pure via-bg-surface-pure to-primary-50/25 p-4 shadow-float sm:flex-row sm:items-center sm:p-5 lg:gap-6">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
+                                    Meeting link · Meeting BaaS
                                 </p>
-                            )}
+                                <p className="font-inter font-medium text-text-primary m-0 truncate text-sm sm:text-base">
+                                    {meetingUrl}
+                                </p>
+                                {meetingPlatform && (
+                                    <span className="inline-block mt-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-bg-surface-lv1 text-text-secondary border border-stroke-primary">
+                                        {meetingPlatform}
+                                    </span>
+                                )}
+                                {meetingLifecycleStatusLabel && (
+                                    <span className="inline-block mt-2 ml-2 text-[11px] font-inter font-medium px-2 py-0.5 rounded-8 bg-primary-50 text-primary-700 border border-primary-200">
+                                        {meetingLifecycleStatusLabel}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 shrink-0">
+                                <a
+                                    href={meetingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-10 bg-primary-500 px-4 py-2 text-center text-sm font-inter font-semibold text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md"
+                                >
+                                    Join meeting
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() => void navigator.clipboard.writeText(meetingUrl)}
+                                    className="rounded-10 border border-stroke-secondary bg-bg-surface-pure px-4 py-2 text-sm font-inter font-medium text-text-primary transition-colors hover:border-primary-500/25 hover:bg-bg-surface-lv1"
+                                >
+                                    Copy link
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
+
+               
+
+
+
+                */}
+
+
+
+
+<div className="px-4 pb-4 pt-2 sm:px-8">
+    <div className="flex items-center gap-4 rounded-16 border border-stroke-primary bg-bg-surface-pure/95 px-4 py-3 shadow-float backdrop-blur-sm">
+        <p className="shrink-0 text-xs font-inter font-semibold text-text-tertiary uppercase tracking-wider m-0">
+            Recording playback
+        </p>
+
+        <div className="flex-1 min-w-0">
+            {audioPlaybackUrl ? (
+                <audio className="w-full max-w-xl h-10" controls src={audioPlaybackUrl} />
+            ) : (
+                <p className="font-inter text-sm text-text-secondary m-0">
+                    No playback available yet.
+                </p>
+            )}
+        </div>
+    </div>
+</div>
             </div>
 
             {/* <TeamCreationSidebar /> */}
