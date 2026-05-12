@@ -213,9 +213,8 @@ const Calendar: React.FC = () => {
                                 <h1 className="font-inter-tight font-medium text-2xl sm:text-3xl text-text-primary tracking-tight m-0">
                                     Calendar
                                 </h1>
-                                <p className="text-sm text-text-secondary font-inter mt-2 max-w-xl m-0">
-                                    Schedule meetings directly here. IntelliMeet creates the calendar event with auto Meet link
-                                    and schedules the notetaker automatically.
+                                <p className="text-sm text-text-secondary font-inter mt-2  m-0">
+                                    Schedule meetings directly here. 
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -242,10 +241,9 @@ const Calendar: React.FC = () => {
                         </header>
 
                         <section className="rounded-16 border border-stroke-primary bg-bg-surface-pure p-5 space-y-3">
-                            <h2 className="font-inter font-semibold text-lg text-text-primary m-0">Calendar (Meeting BaaS)</h2>
-                            <p className="text-sm text-text-secondary m-0 max-w-2xl">
-                                Connect Google Calendar via Meeting BaaS. Your link is saved on your account and survives refresh and
-                                new sessions.
+                            {/* <h2 className="font-inter font-semibold text-lg text-text-primary m-0">Calendar </h2> */}
+                            <p className="text-sm text-text-secondary ">
+                                Connect Google Calendar . Your link is saved on your account and survives refresh and new sessions.
                             </p>
                             {mbaasLoading ? (
                                 <p className="text-sm text-text-tertiary m-0">Checking connection…</p>
@@ -336,7 +334,7 @@ const Calendar: React.FC = () => {
                         </section>
 
                         <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                            <div className="rounded-16 border border-stroke-primary bg-bg-surface-pure p-5">
+                          <div className="h-[320px] rounded-16 border border-stroke-primary bg-bg-surface-pure p-5 flex flex-col">
                                 <h2 className="font-inter font-semibold text-lg text-text-primary m-0 mb-3">Upcoming</h2>
                                 {busy ? (
                                     <p className="text-sm text-text-secondary">Loading…</p>
