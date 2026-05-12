@@ -8,28 +8,30 @@ interface PageHeaderProps {
   className?: string;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ 
-  title, 
+const PageHeader: React.FC<PageHeaderProps> = ({
+  title,
   actions,
   showSearch = true,
-  className = '' 
+  className = '',
 }) => {
   return (
-    <header className={`bg-bg-surface-alpha-90 backdrop-blur-[6px] border-b border-stroke-primary sticky top-0 z-[100] shadow-card ${className}`}>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="flex-1 w-full sm:w-auto">
-          {showSearch && <SearchBar className="w-full sm:w-auto" />}
+    <header
+      className={`sticky top-0 z-[100] border-b border-stroke-primary bg-bg-surface-alpha-90 shadow-float backdrop-blur-md backdrop-saturate-150 ${className}`}
+    >
+      <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 sm:py-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <h1 className="font-inter-tight m-0 text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl sm:leading-tight">
+            {title}
+          </h1>
+          {actions && (
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
+          )}
         </div>
-        {actions && (
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            {actions}
+        {showSearch && (
+          <div className="w-full max-w-xl">
+            <SearchBar className="w-full" />
           </div>
         )}
-      </div>
-      <div className="px-4 sm:px-6 lg:px-8 pb-4">
-        <h1 className="font-inter-tight font-medium text-2xl sm:text-3xl leading-8 text-text-primary">
-          {title}
-        </h1>
       </div>
     </header>
   );

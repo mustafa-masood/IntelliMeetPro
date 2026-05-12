@@ -6,21 +6,22 @@ interface MobileMenuButtonProps {
   className?: string;
 }
 
-const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({ 
-  isOpen, 
-  onClick, 
-  className = '' 
+const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
+  isOpen,
+  onClick,
+  className = '',
 }) => {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`md:hidden fixed top-4 left-4 z-[1001] p-2 rounded-8 bg-neutral-900 text-white transition-all ${className}`}
+      className={`fixed left-3 top-3 z-[1001] rounded-12 border border-white/10 bg-neutral-900/90 p-2.5 text-white shadow-panel backdrop-blur-md transition-transform duration-200 hover:border-white/20 hover:bg-neutral-900 active:scale-[0.98] md:hidden ${className}`}
       aria-label={isOpen ? 'Close menu' : 'Open menu'}
       aria-expanded={isOpen}
     >
       <svg
-        width="24"
-        height="24"
+        width="22"
+        height="22"
         viewBox="0 0 24 24"
         fill="none"
         className="transition-transform duration-300"

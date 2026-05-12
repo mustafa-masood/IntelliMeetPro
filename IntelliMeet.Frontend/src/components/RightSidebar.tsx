@@ -64,14 +64,14 @@ const RightSidebar: React.FC = () => {
 
   return (
     <div className="w-full xl:w-[300px] flex flex-col gap-3">
-      <h2 className="font-inter font-medium text-sm text-text-primary tracking-[-0.084px] mb-1">
+      <h2 className="mb-2 font-inter-tight text-base font-semibold tracking-tight text-text-primary">
         Upcoming Meetings
       </h2>
 
-      <div className="bg-bg-surface-pure rounded-12 shadow-card overflow-visible">
+      <div className="w-full overflow-visible rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float xl:w-[300px]">
         <div className="border-b border-stroke-primary p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="font-inter font-medium text-sm text-text-primary leading-5">April 2026</span>
+            <div className="font-inter text-sm font-medium leading-5 text-text-primary">April 2026</div>
             <div className="flex gap-1.5 items-center">
               <button
                 type="button"
@@ -123,7 +123,7 @@ const RightSidebar: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 shrink-0 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-base">G</div>
             <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-              <div className="font-inter font-medium text-sm text-[#303546] tracking-[-0.176px] leading-5 truncate">
+              <div className="font-inter truncate text-sm font-medium leading-5 tracking-tight text-text-primary">
                 {googleEmail || 'Google Calendar'}
               </div>
               <div className="flex items-center gap-1 font-inter font-normal text-xs text-text-secondary leading-4">
@@ -161,17 +161,23 @@ const RightSidebar: React.FC = () => {
         <div className="p-3">
           {calError && <p className="text-xs text-amber-700 mb-2 font-inter">{calError}</p>}
           {first ? (
-            <div className="border-l-[3px] border-primary-500 rounded-r-8 bg-[#e1f5ee] px-3 py-2.5 flex flex-col gap-1.5">
+            <div className="rounded-r-10 border-l-[3px] border-primary-500 bg-gradient-to-r from-primary-50/90 to-bg-surface-pure px-3 py-2.5">
               <div className="flex items-start justify-between gap-2">
-                <span className="font-inter font-medium text-sm text-[#085041]">{first.title}</span>
-                <span className="shrink-0 text-[10px] font-medium font-inter bg-primary-500 text-white px-2 py-[2px] rounded-full">
+                <span className="font-inter text-sm font-semibold text-text-primary">{first.title}</span>
+                <span className="shrink-0 rounded-full bg-primary-500 px-2 py-0.5 font-inter text-[10px] font-semibold text-white">
                   {first.botStatus}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-xs font-inter text-[#0f6e56]">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <circle cx="6" cy="6" r="5" stroke="#0f6e56" strokeWidth="1.2" />
-                  <polyline points="6,3 6,6 8,7.5" stroke="#0f6e56" strokeWidth="1.2" strokeLinecap="round" />
+              <div className="flex items-center gap-1 font-inter text-xs text-text-secondary">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" className="text-primary-500" />
+                  <polyline
+                    points="6,3 6,6 8,7.5"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    className="text-primary-500"
+                  />
                 </svg>
                 {formatRange(first.startUtc, first.endUtc)}
               </div>
@@ -182,9 +188,9 @@ const RightSidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-bg-surface-pure rounded-12 shadow-card overflow-hidden">
-        <div className="border-b border-stroke-primary py-2.5 px-4 flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-bg-surface-lv1 border border-stroke-primary rounded-8 flex items-center justify-center shrink-0">
+      <div className="overflow-hidden rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float">
+        <div className="flex items-center gap-2.5 border-b border-stroke-primary px-4 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-10 border border-stroke-primary bg-bg-surface-lv1 text-text-secondary">
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
               <rect x="3" y="1" width="8" height="12" rx="1" stroke="currentColor" strokeWidth="1.2" />
               <rect x="5" y="0" width="4" height="2.5" rx="0.5" fill="currentColor" />
@@ -202,7 +208,7 @@ const RightSidebar: React.FC = () => {
             type="url"
             value={joinUrl}
             onChange={(e) => setJoinUrl(e.target.value)}
-            className="border border-stroke-primary rounded-8 px-3 py-2 font-inter text-sm text-text-primary tracking-[-0.14px] w-full"
+            className="w-full rounded-10 border border-stroke-primary bg-bg-surface-pure px-3 py-2.5 font-inter text-sm text-text-primary outline-none transition-[border-color,box-shadow] placeholder:text-text-tertiary focus:border-primary-500/40 focus:ring-2 focus:ring-primary-500/15"
             placeholder="https://meet.google.com/..."
           />
           {joinMsg && <p className="text-xs text-primary-700 font-inter">{joinMsg}</p>}
@@ -224,7 +230,7 @@ const RightSidebar: React.FC = () => {
                 setJoinBusy(false);
               }
             }}
-            className="w-full bg-primary-500 border border-[#1f8e6b] rounded-[6px] px-4 py-2 font-inter font-medium text-sm text-white cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
+            className="w-full cursor-pointer rounded-10 border border-primary-600 bg-primary-500 px-4 py-2.5 font-inter text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
           >
             {joinBusy ? 'Sending…' : 'Join Meeting'}
           </button>

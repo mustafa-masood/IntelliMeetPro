@@ -621,7 +621,7 @@ const Meetings: React.FC = () => {
     }
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full overflow-hidden bg-bg-surface-lv1 surface-gradient">
             <MobileMenuButton
                 isOpen={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -632,19 +632,19 @@ const Meetings: React.FC = () => {
                 onMobileClose={() => setIsMobileMenuOpen(false)}
             />
 
-            <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary min-h-16 flex flex-wrap items-center gap-3 px-7 sm:px-7 py-2 shrink-0">
-                    <SearchBar placeholder="Search meetings…" className="sm:w-64" />
+            <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
+                <div className="sticky top-0 z-20 flex min-h-16 shrink-0 flex-wrap items-center gap-3 border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-2.5 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7">
+                    <SearchBar placeholder="Search meetings…" className="min-w-0 flex-1 sm:max-w-xs sm:flex-none" />
                     {usageSummary && (
-                        <div className="flex flex-wrap gap-2 text-[11px] text-text-secondary font-inter shrink-0">
-                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                        <div className="flex shrink-0 flex-wrap gap-2 font-inter text-[11px] text-text-secondary">
+                            <span className="rounded-10 border border-stroke-primary bg-bg-surface-lv1/90 px-2.5 py-1 shadow-xs">
                                 Plan:{' '}
-                                <span className="font-medium text-text-primary">{usageSummary.currentPlan}</span>
+                                <span className="font-semibold text-text-primary">{usageSummary.currentPlan}</span>
                             </span>
-                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                            <span className="rounded-10 border border-stroke-primary bg-bg-surface-lv1/90 px-2.5 py-1 shadow-xs">
                                 Meetings: {usageSummary.meetingsThisMonth}/{usageSummary.meetingsLimit}
                             </span>
-                            <span className="rounded-6 border border-stroke-primary px-2 py-1 bg-bg-surface-lv1">
+                            <span className="rounded-10 border border-stroke-primary bg-bg-surface-lv1/90 px-2.5 py-1 shadow-xs">
                                 Chat: {usageSummary.chatThisMonth}/{usageSummary.chatLimit}
                             </span>
                         </div>

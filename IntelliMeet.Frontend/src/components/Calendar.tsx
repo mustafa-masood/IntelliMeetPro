@@ -184,13 +184,13 @@ const Calendar: React.FC = () => {
     };
 
     return (
-        <div className="flex h-dvh max-h-dvh min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-dvh max-h-dvh min-h-0 w-full max-w-full overflow-hidden bg-bg-surface-lv1 surface-gradient">
             <MobileMenuButton isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
-            <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-14 flex items-center px-4 sm:px-7 shrink-0 z-10">
-                    <SearchBar placeholder="Search calendar & events…" className="sm:w-72 max-w-full" />
+            <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
+                <div className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-7">
+                    <SearchBar placeholder="Search calendar & events…" className="max-w-full sm:w-72" />
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">

@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="flex h-[100dvh] min-h-0 max-h-[100dvh] bg-bg-surface-lv1 overflow-hidden">
+    <div className="flex h-[100dvh] min-h-0 max-h-[100dvh] overflow-hidden bg-bg-surface-lv1 surface-gradient">
       <MobileMenuButton 
         isOpen={isMobileMenuOpen} 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -38,15 +38,15 @@ const Dashboard: React.FC = () => {
         isMobileOpen={isMobileMenuOpen}
         onMobileClose={() => setIsMobileMenuOpen(false)}
       />
-      <main className="flex-1 flex flex-col min-h-0 h-full ml-0 md:ml-[270px] transition-all duration-300 overflow-hidden">
+      <main className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px] ml-0">
         {/* Single scrollable region, no nested overflow */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-          <Container className="py-4 sm:py-6 lg:py-8 h-full">
-            <div className="flex flex-col xl:flex-row gap-4 lg:gap-6 min-h-full">
-              <div className="flex-1 xl:flex-[2] min-w-0 flex flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <Container className="h-full py-5 sm:py-7 lg:py-9">
+            <div className="flex min-h-full flex-col gap-5 lg:gap-8 xl:flex-row">
+              <div className="flex min-w-0 flex-1 flex-col xl:flex-[2]">
                 <RecentMeetingsTable />
               </div>
-              <aside className="xl:w-[300px] shrink-0">
+              <aside className="shrink-0 xl:w-[300px]">
                 <RightSidebar />
               </aside>
             </div>

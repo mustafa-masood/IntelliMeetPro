@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const user = clerkEnabled ? useUser() : null;
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const profileButtonRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
   const [isEnterprise, setIsEnterprise] = useState<boolean>(!clerkEnabled);
   const [me, setMe] = useState<OnboardingMeDto | null>(null);
 
@@ -223,7 +223,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[999] md:hidden"
+          className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-[2px] md:hidden"
           onClick={onMobileClose}
           aria-hidden="true"
         />
@@ -234,9 +234,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         className={`
           fixed top-0 left-0 z-[1000] 
           w-[270px] h-screen 
-          bg-neutral-900 
-          flex flex-col
-          transform transition-transform duration-300 ease-in-out
+          flex flex-col border-r border-white/[0.06]
+          bg-gradient-to-b from-neutral-900 via-neutral-900 to-[#030d0b]
+          shadow-panel
+          transform transition-transform duration-300 ease-out
           md:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
@@ -244,31 +245,31 @@ const Sidebar: React.FC<SidebarProps> = ({
         aria-label="Main navigation"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 h-[72px] shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex h-[72px] shrink-0 items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex items-center gap-2.5">
             <img
               src="/src/assets/intellimeet-logo-light.png"
               alt="IntelliMeet Logo"
-              className="w-8 h-8 rounded-8 object-contain self-center"
+              className="h-9 w-9 rounded-10 object-contain shadow-float ring-1 ring-white/10"
             />
-            <span className="font-inter font-semibold text-xl sm:text-2xl text-text-white tracking-[-0.48px] flex items-center h-8 mt-1">
+            <span className="font-inter-tight mt-0.5 flex h-8 items-center text-xl font-semibold tracking-tight text-white sm:text-2xl">
               IntelliMeet
             </span>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 flex flex-col gap-4 py-1 px-4 pb-5 overflow-y-auto scrollbar-hide">
-          <div className="h-px bg-neutral-400 opacity-20 w-full" />
+        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-1 pb-5 scrollbar-hide">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             {isEnterprise && (
               <Link
                 to="/my-workspace"
-                className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
+                className={`flex h-10 cursor-pointer items-center gap-3 rounded-10 border px-3 no-underline text-inherit transition-all duration-200 ${
                   location.pathname === '/my-workspace'
-                    ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
-                    : 'hover:bg-white/5'
+                    ? 'border-white/10 bg-gradient-to-r from-primary-500/25 to-white/[0.03] shadow-[inset_3px_0_0_0_#16a34a]'
+                    : 'border-transparent hover:border-white/[0.06] hover:bg-white/[0.05]'
                 }`}
                 onClick={onMobileClose}
               >
@@ -304,41 +305,40 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit relative ${
+                  className={`relative flex h-10 cursor-pointer items-center gap-3 rounded-10 border px-3 no-underline text-inherit transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
-                      : 'hover:bg-white/5'
+                      ? 'border-white/10 bg-gradient-to-r from-primary-500/25 to-white/[0.03] shadow-[inset_3px_0_0_0_#16a34a]'
+                      : 'border-transparent hover:border-white/[0.06] hover:bg-white/[0.05]'
                   }`}
                   onClick={onMobileClose}
                 >
-                  <div className="w-5 h-5 flex items-center justify-center">
+                  <div className="flex h-5 w-5 items-center justify-center">
                     {renderIcon(item.iconType, isActive)}
                   </div>
-                  <span className={`flex-1 font-inter font-medium text-sm tracking-[-0.084px] ${
-                    isActive ? 'text-white' : 'text-neutral-300'
-                  }`}>
+                  <span
+                    className={`flex-1 font-inter text-sm font-medium tracking-tight ${
+                      isActive ? 'text-white' : 'text-neutral-300'
+                    }`}
+                  >
                     {item.label}
                   </span>
-                  {isActive && (
-                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_0px_0px_1px_rgba(255,255,255,0.06)] rounded-8" />
-                  )}
                 </Link>
               );
             })}
           </div>
 
-          <div className="h-px bg-neutral-400 opacity-20 w-full" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
           <div className="flex flex-col">
-            <div className="font-inter font-medium text-xs text-neutral-400 tracking-[0.48px] uppercase px-3 py-1 pb-2">
-              PREFERENCE
+            <div className="px-3 pb-2 pt-1 font-inter text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+              Preference
             </div>
             <Link
               to="/deferred/app-integrations"
-              className={`flex items-center gap-3 h-10 px-3 rounded-8 cursor-pointer transition-colors no-underline text-inherit ${
+              className={`flex h-10 cursor-pointer items-center gap-3 rounded-10 border px-3 no-underline text-inherit transition-all duration-200 ${
                 location.pathname.startsWith('/deferred/app-integrations')
-                  ? 'bg-gradient-to-r from-[rgba(0,168,121,0.24)] to-transparent border border-white/6'
-                  : 'hover:bg-white/5'
+                  ? 'border-white/10 bg-gradient-to-r from-primary-500/25 to-white/[0.03] shadow-[inset_3px_0_0_0_#16a34a]'
+                  : 'border-transparent hover:border-white/[0.06] hover:bg-white/[0.05]'
               }`}
               onClick={onMobileClose}
             >
@@ -356,8 +356,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Plan Card */}
         {planBadge ? (
-          <div className="bg-transparent border border-white/12 rounded-12 p-4 flex flex-col gap-2 mx-4 mb-4">
-            <div className="font-inter font-medium text-base text-text-white tracking-[-0.176px] leading-6">
+          <div className="mx-4 mb-4 flex flex-col gap-2 rounded-12 border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+            <div className="font-inter text-base font-medium leading-6 tracking-tight text-white">
               {planBadge}
             </div>
             {me?.role ? (
@@ -367,14 +367,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         ) : null}
 
         {/* Profile Section */}
-        <div className="p-4 sm:p-5 px-4 bg-neutral-900 relative shrink-0">
-          <div
+        <div className="relative shrink-0 bg-neutral-900/80 px-4 py-4 sm:p-5">
+          <button
+            type="button"
             ref={profileButtonRef}
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-            className="border border-neutral-700 rounded-12 p-3 flex items-center justify-between bg-gradient-to-b from-transparent to-white/5 bg-gradient-to-r from-white/4 to-white/4 shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.08)] cursor-pointer transition-opacity hover:opacity-90"
-            role="button"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setIsProfileDropdownOpen(false);
+            }}
+            className="flex w-full cursor-pointer items-center justify-between rounded-12 border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-3 text-left shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-200 hover:border-white/15 hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400/80"
             aria-expanded={isProfileDropdownOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
             aria-label="User menu"
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -398,16 +401,31 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
             </div>
-            <div className="text-neutral-300 text-base ml-2 shrink-0" aria-hidden="true">
-              ↑
-            </div>
-          </div>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 20 20"
+              fill="none"
+              className={`ml-2 shrink-0 text-neutral-300 transition-transform duration-200 ${
+                isProfileDropdownOpen ? 'rotate-180' : ''
+              }`}
+              aria-hidden="true"
+            >
+              <path
+                d="M5 7.5L10 12.5L15 7.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
 
           {/* Profile Dropdown */}
           {isProfileDropdownOpen && (
             <div
               ref={profileDropdownRef}
-              className="absolute bottom-[88px] left-4 right-4 bg-white border border-stroke-primary rounded-12 shadow-lg z-[1001] overflow-hidden"
+              className="absolute bottom-[88px] left-4 right-4 z-[1001] overflow-hidden rounded-12 border border-stroke-primary bg-bg-surface-pure/95 shadow-panel backdrop-blur-md"
               role="menu"
             >
               <div className="flex flex-col">
@@ -417,7 +435,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     setIsProfileDropdownOpen(false);
                     onMobileClose?.();
                   }}
-                  className="flex items-center gap-3 px-4 py-3 bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary no-underline text-inherit"
+                  className="flex cursor-pointer items-center gap-3 border-b border-stroke-primary bg-bg-surface-pure px-4 py-3 no-underline text-inherit transition-colors hover:bg-bg-surface-lv1"
                   role="menuitem"
                 >
                   <SettingsIcon isActive={false} />
@@ -431,7 +449,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     setIsProfileDropdownOpen(false);
                     onMobileClose?.();
                   }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer border-b border-stroke-primary no-underline text-inherit"
+                  className="flex cursor-pointer items-center gap-3 border-b border-stroke-primary px-4 py-3 no-underline text-inherit transition-colors hover:bg-bg-surface-lv1"
                   role="menuitem"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -452,7 +470,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }
                     navigate('/signin', { replace: true });
                   }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-bg-surface-lv1 transition-colors cursor-pointer text-left w-full border-0 bg-transparent"
+                  className="flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3 text-left transition-colors hover:bg-bg-surface-lv1"
                   role="menuitem"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">

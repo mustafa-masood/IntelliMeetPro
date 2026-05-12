@@ -129,19 +129,19 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
     };
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full overflow-hidden bg-bg-surface-lv1 surface-gradient">
             <Sidebar />
 
-            <div className="ml-0 lg:ml-[270px] mr-0 xl:mr-[190px] flex-1 flex flex-col min-h-0 h-full overflow-hidden relative">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary px-4 sm:px-8 py-3 flex items-center shrink-0 z-[100]">
-                    <SearchBar placeholder="Search in workspace…" />
+            <div className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:ml-[270px] xl:mr-[190px]">
+                <div className="sticky top-0 z-[100] flex shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 py-3 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
+                    <SearchBar placeholder="Search in workspace…" className="max-w-xl sm:w-96" />
                 </div>
 
-                <div className="px-4 sm:px-8 pt-4 flex items-center gap-2 flex-wrap shrink-0">
+                <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pt-5 sm:px-8">
                     <button
                         type="button"
                         onClick={onBack}
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-text-secondary hover:text-text-primary transition-colors"
+                        className="flex cursor-pointer items-center gap-1 rounded-10 border-0 bg-transparent p-1.5 text-text-secondary transition-colors hover:bg-bg-surface-lv1 hover:text-text-primary"
                         aria-label="Back to meetings"
                     >
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -154,21 +154,21 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                             />
                         </svg>
                     </button>
-                    <span className="font-inter font-medium text-sm text-text-primary">
+                    <span className="font-inter text-sm font-medium text-text-primary">
                         Meetings <span className="text-text-tertiary">/</span> {meetingTitle}
                     </span>
                 </div>
 
                 {meetingIdForApi && typeof meetingProcessingStatus === 'number' && (
-                    <div className="px-4 sm:px-8 pt-3 shrink-0">
-                        <div
-                            className={`rounded-12 border px-4 py-3 text-sm font-inter ${
-                                meetingProcessingStatus === 5
-                                    ? 'border-red-200 bg-red-50 text-red-900'
-                                    : meetingProcessingStatus === 4 || meetingTranscriptAnalysisCompleted
-                                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                                      : 'border-amber-200 bg-amber-50 text-amber-950'
-                            }`}
+                <div className="shrink-0 px-4 pt-4 sm:px-8">
+                    <div
+                        className={`rounded-12 border px-4 py-3 font-inter text-sm ${
+                            meetingProcessingStatus === 5
+                                ? 'border-red-200/90 bg-red-50/95 text-red-900'
+                                : meetingProcessingStatus === 4 || meetingTranscriptAnalysisCompleted
+                                  ? 'border-emerald-200/90 bg-emerald-50/95 text-emerald-900'
+                                  : 'border-amber-200/90 bg-amber-50/95 text-amber-950'
+                        } shadow-xs`}
                             role="status"
                         >
                             <p className="m-0 font-semibold">
@@ -185,7 +185,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
 
                 {meetingUrl && (
                     <div className="px-4 sm:px-8 pt-4 shrink-0">
-                        <div className="rounded-16 border border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/30 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-sm">
+                        <div className="flex flex-col gap-4 rounded-16 border border-stroke-primary bg-gradient-to-br from-bg-surface-pure via-bg-surface-pure to-primary-50/25 p-4 shadow-float sm:flex-row sm:items-center sm:p-5 lg:gap-6">
                             <div className="flex-1 min-w-0">
                                 <p className="text-[11px] font-inter font-semibold uppercase tracking-wider text-text-tertiary m-0 mb-1">
                                     Meeting link · Meeting BaaS
@@ -209,14 +209,14 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                     href={meetingUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-4 py-2 rounded-10 bg-primary-500 text-white text-sm font-inter font-semibold hover:opacity-95 text-center"
+                                    className="rounded-10 bg-primary-500 px-4 py-2 text-center text-sm font-inter font-semibold text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md"
                                 >
                                     Join meeting
                                 </a>
                                 <button
                                     type="button"
                                     onClick={() => void navigator.clipboard.writeText(meetingUrl)}
-                                    className="px-4 py-2 rounded-10 border border-stroke-secondary bg-bg-surface-pure text-sm font-inter font-medium text-text-primary hover:bg-bg-surface-lv1"
+                                    className="rounded-10 border border-stroke-secondary bg-bg-surface-pure px-4 py-2 text-sm font-inter font-medium text-text-primary transition-colors hover:border-primary-500/25 hover:bg-bg-surface-lv1"
                                 >
                                     Copy link
                                 </button>
@@ -250,15 +250,15 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </div>
                 )}
 
-                <div className="px-4 sm:px-8 pt-4 shrink-0">
-                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 p-1 sm:p-2 flex gap-1 w-fit">
+                <div className="shrink-0 px-4 pt-4 sm:px-8">
+                    <div className="inline-flex w-fit gap-1 rounded-12 border border-stroke-primary bg-bg-surface-lv1/90 p-1 shadow-xs backdrop-blur-sm sm:p-1.5">
                         <button
                             type="button"
                             onClick={() => setActiveTab('summary')}
-                            className={`px-4 py-2 rounded-10 text-sm font-inter font-medium transition-all ${
+                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${
                                 activeTab === 'summary'
-                                    ? 'bg-bg-surface-lv1 text-text-primary shadow-sm'
-                                    : 'text-text-secondary hover:text-text-primary'
+                                    ? 'bg-bg-surface-pure text-text-primary shadow-float ring-1 ring-black/[0.04]'
+                                    : 'text-text-secondary hover:bg-bg-surface-pure/60 hover:text-text-primary'
                             }`}
                         >
                             Summary
@@ -266,10 +266,10 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                         <button
                             type="button"
                             onClick={() => setActiveTab('transcription')}
-                            className={`px-4 py-2 rounded-10 text-sm font-inter font-medium transition-all ${
+                            className={`rounded-10 px-4 py-2 font-inter text-sm font-medium transition-all duration-200 ${
                                 activeTab === 'transcription'
-                                    ? 'bg-bg-surface-lv1 text-text-primary shadow-sm'
-                                    : 'text-text-secondary hover:text-text-primary'
+                                    ? 'bg-bg-surface-pure text-text-primary shadow-float ring-1 ring-black/[0.04]'
+                                    : 'text-text-secondary hover:bg-bg-surface-pure/60 hover:text-text-primary'
                             }`}
                         >
                             Transcription
@@ -277,11 +277,11 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden px-4 sm:px-8 py-4 flex flex-col xl:flex-row gap-0 min-h-0">
-                    <div className="flex-1 bg-bg-surface-pure border border-stroke-primary xl:border-r-0 rounded-tl-12 rounded-tr-12 xl:rounded-tr-none rounded-bl-12 flex flex-col overflow-hidden min-h-[320px] xl:min-h-0">
+                <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-5 sm:px-8 xl:flex-row">
+                    <div className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float xl:min-h-0 xl:rounded-r-none xl:border-r-0">
                         {activeTab === 'summary' && (
-                            <div className="p-5 border-b border-stroke-primary bg-bg-surface-pure">
-                                <h1 className="font-inter-tight font-medium text-2xl leading-8 text-text-primary tracking-tight m-0 mb-2">
+                            <div className="border-b border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/20 p-5 sm:p-6">
+                                <h1 className="font-inter-tight m-0 mb-2 text-2xl font-semibold leading-tight tracking-tight text-text-primary sm:text-[1.65rem]">
                                     {meetingTitle}
                                 </h1>
                                 {meetingDate && (
@@ -295,12 +295,14 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                             </div>
                         )}
 
-                        <div className="flex-1 overflow-y-auto p-5">
+                        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
                             {activeTab === 'summary' ? (
                                 <div className="flex flex-col gap-6 max-w-2xl">
                                     <div>
-                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Overview</h2>
-                                        <p className="font-inter text-base leading-7 text-text-secondary m-0">
+                                        <h2 className="font-inter-tight m-0 mb-2 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                            Overview
+                                        </h2>
+                                        <p className="m-0 font-inter text-base leading-7 text-text-secondary">
                                             {summary?.trim()
                                                 ? summary
                                                 : 'No summary yet. It will appear after local Ollama analysis runs (when transcript text is available), or open a meeting that already has notes in the system.'}
@@ -308,13 +310,15 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                     </div>
 
                                     <div>
-                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Key points</h2>
+                                        <h2 className="font-inter-tight m-0 mb-2 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                            Key points
+                                        </h2>
                                         {keyPoints.length > 0 ? (
                                             <ul className="list-none space-y-2 m-0 pl-0">
                                                 {keyPoints.map((point, index) => (
                                                     <li
                                                         key={index}
-                                                        className="font-inter text-base leading-7 text-text-secondary pl-4 border-l-2 border-primary-500/40"
+                                                        className="font-inter border-l-2 border-primary-500/50 pl-4 text-base leading-7 text-text-secondary"
                                                     >
                                                         {point}
                                                     </li>
@@ -329,7 +333,9 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
 
                                     {keyTakeaways.length > 0 && (
                                         <div>
-                                            <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Takeaways</h2>
+                                            <h2 className="font-inter-tight m-0 mb-2 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                                Takeaways
+                                            </h2>
                                             <ul className="list-none space-y-2 m-0 pl-0">
                                                 {keyTakeaways.map((takeaway, index) => (
                                                     <li
@@ -345,13 +351,15 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
 
                                     {meetingIdForApi && onConvertActionToTodo ? (
                                         <div>
-                                            <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Action items</h2>
+                                            <h2 className="font-inter-tight m-0 mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                                Action items
+                                            </h2>
                                             {apiActionItems && apiActionItems.length > 0 ? (
                                                 <ul className="space-y-3 m-0 pl-0 list-none">
                                                     {apiActionItems.map((item) => (
                                                         <li
                                                             key={item.id}
-                                                            className="rounded-12 border border-stroke-primary p-3 bg-bg-surface-lv1/40"
+                                                            className="rounded-12 border border-stroke-primary bg-bg-surface-lv1/50 p-4 shadow-xs transition-shadow hover:shadow-sm"
                                                         >
                                                             <label className="flex items-start gap-3 cursor-pointer">
                                                                 <input
@@ -488,7 +496,9 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                     ) : (
                                         actionItems.length > 0 && (
                                             <div>
-                                                <h2 className="font-inter font-semibold text-base text-text-primary m-0 mb-2">Action items</h2>
+                                                <h2 className="font-inter-tight m-0 mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                                    Action items
+                                                </h2>
                                                 <ol className="list-decimal list-inside space-y-2 font-inter text-sm text-text-secondary">
                                                     {actionItems.map((item, index) => (
                                                         <li key={index}>
@@ -504,8 +514,10 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4 w-full max-w-3xl">
-                                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                                        <h2 className="font-inter font-semibold text-base text-text-primary m-0">Transcript</h2>
+                                    <div className="flex flex-wrap items-center justify-between gap-4">
+                                        <h2 className="font-inter-tight m-0 text-sm font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                                            Transcript
+                                        </h2>
                                         <span className="text-xs text-text-tertiary font-inter">
                                             {showPlainTranscriptOnly
                                                 ? 'Plain text'
@@ -513,7 +525,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                         </span>
                                     </div>
 
-                                    <div className="bg-bg-surface-lv1 border border-stroke-primary rounded-10 px-3 py-2 flex items-center gap-2">
+                                    <div className="flex items-center gap-2 rounded-10 border border-stroke-primary bg-bg-surface-pure/90 px-3 py-2 shadow-xs backdrop-blur-sm">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
                                             <path
                                                 d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z"
@@ -534,7 +546,7 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                             type="search"
                                             value={transcriptQuery}
                                             onChange={(e) => setTranscriptQuery(e.target.value)}
-                                            className="flex-1 border-none outline-none font-inter text-sm bg-transparent text-text-primary placeholder:text-text-disable min-w-0"
+                                            className="min-w-0 flex-1 border-0 bg-transparent font-inter text-sm text-text-primary outline-none placeholder:text-text-disable"
                                             placeholder="Filter by speaker or phrase…"
                                             aria-label="Search transcript"
                                         />
@@ -560,8 +572,9 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                 const avatarColor = getAvatarColor(segment.speaker);
                                                 const isPrimary = avatarColor === '#3c91e6' || avatarColor === '#16a34a';
                                                 return (
-                                                    <div key={`${segment.start}-${index}`} className="flex flex-col gap-2">
-                                                        <div className="flex gap-2 items-center">
+                                            <div key={`${segment.start}-${index}`} className="group rounded-12 border border-transparent px-2 py-2 transition-colors hover:border-stroke-primary hover:bg-bg-surface-lv1/60">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center gap-2">
                                                             <div
                                                                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-inter font-medium shrink-0 ${
                                                                     isPrimary ? 'bg-primary-500 text-white' : 'text-text-primary'
@@ -570,19 +583,20 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                                                             >
                                                                 {getInitials(segment.speaker)}
                                                             </div>
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <span className="font-inter font-medium text-sm text-text-primary truncate">
+                                                            <div className="flex min-w-0 items-center gap-2">
+                                                                <span className="truncate font-inter text-sm font-medium text-text-primary">
                                                                     {segment.speaker}
                                                                 </span>
-                                                                <span className="text-xs font-mono text-primary-500 shrink-0">
+                                                                <span className="shrink-0 font-mono text-xs tabular-nums text-primary-600">
                                                                     {formatTime(segment.start)}
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <p className="font-inter text-sm text-text-secondary leading-6 pl-10 m-0">
+                                                        <p className="m-0 pl-10 font-inter text-sm leading-6 text-text-secondary">
                                                             {segment.text}
                                                         </p>
                                                     </div>
+                                                </div>
                                                 );
                                             })
                                         ) : !showPlainTranscriptOnly ? (
@@ -598,12 +612,12 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                         </div>
                     </div>
 
-                    <div className="hidden xl:flex w-[6px] bg-bg-surface-lv2 shrink-0" aria-hidden />
+                    <div className="hidden w-px shrink-0 bg-gradient-to-b from-transparent via-stroke-primary to-transparent xl:block" aria-hidden />
 
-                    <div className="w-full xl:w-[min(380px,36vw)] bg-bg-surface-pure border border-stroke-primary border-t-0 xl:border-t xl:border-l-0 rounded-bl-12 rounded-br-12 xl:rounded-bl-none xl:rounded-tr-12 flex flex-col max-h-[420px] xl:max-h-none xl:h-auto min-h-[280px] overflow-hidden">
-                        <div className="p-4 border-b border-stroke-primary flex items-center justify-between">
+                    <div className="flex max-h-[420px] min-h-[280px] w-full flex-col overflow-hidden rounded-16 border border-stroke-primary border-t-0 bg-bg-surface-pure/95 shadow-float backdrop-blur-md xl:h-auto xl:max-h-none xl:w-[min(380px,36vw)] xl:rounded-bl-none xl:rounded-tr-16 xl:border-l-0 xl:border-t">
+                        <div className="flex items-center justify-between border-b border-stroke-primary bg-gradient-to-r from-bg-surface-pure to-primary-50/15 px-4 py-3">
                             <div>
-                                <span className="font-inter font-semibold text-sm text-text-primary block">Ask AI</span>
+                                <span className="block font-inter text-sm font-semibold text-text-primary">Ask AI</span>
                                 <span className="font-inter text-xs text-text-tertiary">Context: this meeting</span>
                             </div>
                         </div>
@@ -629,8 +643,8 @@ const MeetingDetails: React.FC<MeetingDetailsProps> = ({
                     </div>
                 </div>
 
-                <div className="px-4 sm:px-8 pb-6">
-                    <div className="bg-bg-surface-pure border border-stroke-primary rounded-12 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="px-4 pb-8 pt-2 sm:px-8">
+                    <div className="flex flex-col gap-4 rounded-16 border border-stroke-primary bg-bg-surface-pure/95 px-4 py-4 shadow-float backdrop-blur-sm sm:flex-row sm:items-center sm:px-6 sm:py-5">
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-inter font-semibold text-text-tertiary uppercase tracking-wider m-0 mb-1">
                                 Recording playback

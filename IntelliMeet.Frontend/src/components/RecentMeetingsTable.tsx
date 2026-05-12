@@ -104,7 +104,7 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
   const DotsButton = ({ meeting }: { meeting: Meeting }) => (
     <div className="relative" ref={openDropdownId === meeting.id ? dropdownRef : undefined}>
       <button
-        className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer shadow-[0px_1px_2px_0px_rgba(13,13,18,0.06)] hover:bg-bg-surface-lv1 transition-colors"
+        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-stroke-primary/60 bg-bg-surface-pure text-text-secondary shadow-xs transition-all hover:border-primary-500/30 hover:bg-primary-50/50 hover:text-text-primary"
         aria-label={`More options for ${meeting.title}`}
         onClick={(e) => toggleDropdown(e, meeting.id)}
       >
@@ -116,7 +116,7 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
       </button>
 
       {openDropdownId === meeting.id && (
-        <div className="absolute right-0 top-8 z-50 bg-bg-surface-pure border border-stroke-primary rounded-8 shadow-card min-w-[120px] py-1 overflow-hidden">
+        <div className="absolute right-0 top-9 z-50 min-w-[128px] overflow-hidden rounded-10 border border-stroke-primary bg-bg-surface-pure/95 py-1 shadow-panel backdrop-blur-md">
           <button
             className="w-full px-4 py-2 text-left font-inter font-normal text-sm text-red-500 hover:bg-bg-surface-lv1 transition-colors flex items-center gap-2 cursor-pointer"
             onClick={(e) => {
@@ -136,7 +136,7 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <h1 className="font-inter font-medium text-2xl text-text-primary tracking-[-0.084px] mb-1">
+      <h1 className="mb-2 font-inter-tight text-3xl font-semibold tracking-tight text-text-primary sm:text-[1.75rem]">
         Dashboard
       </h1>
 
@@ -146,12 +146,13 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
         </p>
       )}
 
-      <div className="bg-bg-surface-pure rounded-12 sm:rounded-16 shadow-card flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="border-b border-stroke-primary py-3 sm:py-[14px] px-4 sm:px-6">
-          <div className="inline-block relative after:content-[''] after:absolute after:bottom-[-14px] after:left-0 after:w-full after:h-0.5 after:bg-primary-500">
-            <span className="font-inter font-medium text-sm text-neutral-900 tracking-[-0.084px]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-16 border border-stroke-primary bg-bg-surface-pure shadow-float">
+        <div className="border-b border-stroke-primary px-4 py-3 sm:px-6 sm:py-4">
+          <div className="relative inline-block">
+            <span className="font-inter text-sm font-semibold tracking-tight text-text-primary">
               Recent Meetings
             </span>
+            <span className="absolute -bottom-3 left-0 h-0.5 w-full rounded-full bg-primary-500" aria-hidden />
           </div>
         </div>
 
@@ -175,9 +176,9 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
             <table className="w-full border-collapse">
               <tbody>
                 {displayMeetings.map((meeting) => (
-                  <tr
+              <tr
                     key={meeting.id}
-                    className="border-b border-stroke-primary hover:bg-bg-surface-lv1 transition-colors cursor-pointer"
+                    className="cursor-pointer border-b border-stroke-primary transition-colors duration-150 hover:bg-primary-50/35"
                   >
                     <td className="px-3 sm:px-4 py-3 font-inter font-normal text-sm text-text-secondary tracking-[-0.084px]">
                       <div className="flex items-center gap-3">
@@ -204,7 +205,10 @@ const RecentMeetingsTable: React.FC<RecentMeetingsTableProps> = ({ meetings: pro
 
         <div className="md:hidden flex flex-col divide-y divide-stroke-primary">
           {displayMeetings.map((meeting) => (
-            <div key={meeting.id} className="p-4 hover:bg-bg-surface-lv1 transition-colors cursor-pointer">
+            <div
+              key={meeting.id}
+              className="cursor-pointer p-4 transition-colors duration-150 hover:bg-primary-50/25"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary-500 text-white text-xs shrink-0">
                   {meeting.title.substring(0, 2).toUpperCase()}

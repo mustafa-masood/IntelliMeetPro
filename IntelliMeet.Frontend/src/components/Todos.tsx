@@ -47,13 +47,13 @@ const Todos: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full bg-bg-surface-lv1 overflow-hidden">
+        <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-full overflow-hidden bg-bg-surface-lv1 surface-gradient">
             <MobileMenuButton isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
             <Sidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
-            <main className="flex-1 flex flex-col min-h-0 h-full overflow-hidden ml-0 md:ml-[270px] transition-all duration-300">
-                <div className="bg-bg-surface-pure/90 backdrop-blur-md border-b border-stroke-primary h-14 flex items-center px-4 sm:px-8 shrink-0">
-                    <SearchBar placeholder="Search to-dos…" className="sm:w-72" />
+            <main className="relative ml-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-out md:ml-[270px]">
+                <div className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b border-stroke-primary bg-bg-surface-pure/85 px-4 shadow-float backdrop-blur-md backdrop-saturate-150 sm:px-8">
+                    <SearchBar placeholder="Search to-dos…" className="w-full sm:w-72" />
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
@@ -90,7 +90,7 @@ const Todos: React.FC = () => {
                             ].map((s) => (
                                 <div
                                     key={s.label}
-                                    className={`rounded-12 border border-stroke-primary bg-bg-surface-pure p-4 shadow-sm border-l-4 ${s.accent}`}
+                                    className={`rounded-16 border border-stroke-primary bg-bg-surface-pure p-4 shadow-float transition-shadow hover:shadow-md sm:p-5 border-l-4 ${s.accent}`}
                                 >
                                     <p className="text-xs font-inter font-medium text-text-tertiary m-0">{s.label}</p>
                                     <p className="text-2xl font-inter-tight font-semibold text-text-primary m-0 mt-1">{s.value}</p>
@@ -129,7 +129,7 @@ const Todos: React.FC = () => {
 
                         <div className="flex flex-col gap-3 pb-10">
                             {visible.length === 0 && !err && (
-                                <div className="rounded-12 border border-dashed border-stroke-secondary bg-bg-surface-pure/80 px-6 py-12 text-center">
+                                <div className="rounded-16 border border-dashed border-stroke-secondary bg-bg-surface-pure/90 px-6 py-14 text-center shadow-float backdrop-blur-sm">
                                     <p className="font-inter font-medium text-text-primary m-0">Nothing here yet</p>
                                     <p className="text-sm text-text-secondary font-inter m-0 mt-2 max-w-md mx-auto">
                                         Open a meeting, then check an action item to send it to this list.
