@@ -1,0 +1,41 @@
+# Build outputs
+**/bin/
+**/obj/
+_build_out/
+_build_out2/
+_route_test_build/
+.tmp_backend_build/
+.tmp_verify_build/
+
+# User-specific and secret config
+**/appsettings.local.json
+**/local.settings.json
+*.user
+*.suo
+.vs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Node (frontend)
+node_modules/
+dist/
+
+# Logs and temp
+*.log
+*.tmp
+
+# NuGet
+*.nupkg
+project.lock.json
+
+# Secrets backup (local only)
+secrets-backup/
